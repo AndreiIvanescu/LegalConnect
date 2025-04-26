@@ -63,6 +63,43 @@ export interface IStorage {
 
 export class DatabaseStorage implements IStorage {
   sessionStore: any;
+  
+  // Helper method to calculate minimum price from a list of services
+  private calculateMinPrice(services: any[]): number {
+    if (!services || services.length === 0) {
+      return 0;
+    }
+    
+    // Extract all numeric prices from services (both fixed prices and minimum prices)
+    const prices: number[] = [];
+    
+    for (const service of services) {
+      // For fixed price services
+      if (service.price_type === 'fixed' && typeof service.price === 'number') {
+        prices.push(service.price);
+      } 
+      // For percentage based services with minimum price
+      else if (service.price_type === 'percentage' && typeof service.min_price === 'number') {
+        prices.push(service.min_price);
+      }
+      // For services with directly mapped price or min_price fields (for flexibility)
+      else {
+        if (typeof service.price === 'number' && service.price > 0) {
+          prices.push(service.price);
+        }
+        if (typeof service.min_price === 'number' && service.min_price > 0) {
+          prices.push(service.min_price);
+        }
+      }
+    }
+    
+    // If we have valid prices, return the minimum
+    if (prices.length > 0) {
+      return Math.min(...prices);
+    }
+    
+    return 0;
+  }
 
   constructor() {
     this.sessionStore = new PostgresSessionStore({ 
@@ -147,7 +184,7 @@ export class DatabaseStorage implements IStorage {
             education: profile.education || '',
             specializations: specializationsList.map(s => s.name),
             startingPrice: servicesList.length > 0 
-              ? `${Math.min(...servicesList.map(s => s.price || 0)) / 100} RON`
+              ? `${this.calculateMinPrice(servicesList) / 100} RON`
               : 'Contact for pricing',
             isTopRated: profile.isTopRated,
             isAvailable24_7: profile.is24_7,
@@ -245,7 +282,7 @@ export class DatabaseStorage implements IStorage {
             education: profile.education || '',
             specializations: specializationsList.map((s: any) => s.name),
             startingPrice: servicesList.length > 0 
-              ? `${Math.min(...servicesList.map((s: any) => s.price || s.min_price || Infinity).filter((p: any) => p !== null && p !== undefined && isFinite(p))) / 100} RON`
+              ? `${this.calculateMinPrice(servicesList) / 100} RON`
               : 'Contact for pricing',
             isTopRated: profile.is_top_rated,
             isAvailable24_7: profile.is_24_7,
@@ -314,7 +351,7 @@ export class DatabaseStorage implements IStorage {
         specializations: specializationsList.map(s => s.name),
         services: servicesList,
         startingPrice: servicesList.length > 0 
-          ? `${Math.min(...servicesList.map((s: any) => s.price || s.minPrice || Infinity).filter((p: any) => p !== null && p !== undefined && isFinite(p))) / 100} RON`
+          ? `${this.calculateMinPrice(servicesList) / 100} RON`
           : 'Contact for pricing',
         isTopRated: profile.isTopRated,
         isAvailable24_7: profile.is24_7,
