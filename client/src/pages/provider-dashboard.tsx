@@ -279,6 +279,7 @@ export default function ProviderDashboard() {
 
   const handleEditService = (service: any) => {
     setServiceToEdit(service);
+    setIsAddServiceDialogOpen(true);
   };
 
   const handleDeleteService = (id: number) => {
