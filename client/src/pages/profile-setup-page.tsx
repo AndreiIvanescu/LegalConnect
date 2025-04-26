@@ -167,8 +167,8 @@ export default function ProfileSetupPage() {
       const imageUrl = URL.createObjectURL(file);
       setImagePreview(imageUrl);
       
-      // Update the form value
-      form.setValue('imageUrl', file.name);
+      // Update the form value - prefix with '/uploads/' to ensure correct path
+      form.setValue('imageUrl', `/uploads/${file.name}`);
     }
   };
   
@@ -192,15 +192,17 @@ export default function ProfileSetupPage() {
       languages: data.languages.split(',').map(lang => lang.trim())
     };
     
-    // If we have a file selected, we would typically upload it to a server first
-    // and then get back a URL to store. For this example, we'll just use the filename
-    // or keep the existing URL if no new file was selected.
+    // If we have a file selected, ensure we're using the correct path format
     if (selectedFile) {
       // In a real app, you would upload the file to a server first
       // and then use the returned URL
       
-      // For now, we'll just use the filename as the URL
-      formattedData.imageUrl = selectedFile.name;
+      // Make sure image URL has the correct format with /uploads prefix
+      formattedData.imageUrl = formattedData.imageUrl.startsWith('/uploads/') 
+        ? formattedData.imageUrl 
+        : `/uploads/${selectedFile.name}`;
+
+      console.log("Saving image URL:", formattedData.imageUrl);
     }
     
     mutation.mutate(formattedData);
