@@ -11,6 +11,46 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 
+interface Credential {
+  organization: string;
+  title: string;
+  year: string;
+}
+
+interface Provider {
+  id: number;
+  name: string;
+  type: string;
+  rating: number;
+  reviewCount: number;
+  imageUrl: string;
+  location: string;
+  education: string;
+  description?: string;
+  yearsOfExperience?: number;
+  specializations: string[];
+  credentials?: Credential[];
+  languages?: string[];
+  address?: string;
+  is24_7?: boolean;
+  completedServices?: number;
+  services?: Array<{
+    id: number;
+    title: string;
+    description: string;
+    price: string;
+    priceType?: string;
+    isTopRated?: boolean;
+  }>;
+  reviews?: Array<{
+    id: number;
+    author: string;
+    date: string;
+    rating: number;
+    comment: string;
+  }>;
+}
+
 interface ProviderDetailProps {
   providerId: number;
 }
@@ -20,7 +60,7 @@ export default function ProviderDetail({ providerId }: ProviderDetailProps) {
   const [bookingDate, setBookingDate] = useState<Date | undefined>(undefined);
   const [activeTab, setActiveTab] = useState("overview");
   
-  const { data: provider, isLoading } = useQuery({
+  const { data: provider, isLoading } = useQuery<Provider>({
     queryKey: [`/api/providers/${providerId}`]
   });
   
@@ -128,28 +168,30 @@ export default function ProviderDetail({ providerId }: ProviderDetailProps) {
             <div className="mt-4 md:mt-0 flex flex-col sm:flex-row">
               <Dialog>
                 <DialogTrigger asChild>
-                  <Button className="mb-2 sm:mb-0 sm:mr-3">Book Appointment</Button>
+                  <Button className="mb-2 sm:mb-0 sm:mr-3 btn-transition hover-up">Book Appointment</Button>
                 </DialogTrigger>
-                <DialogContent>
+                <DialogContent className="fade-in">
                   <DialogHeader>
-                    <DialogTitle>Book an Appointment with {provider.name}</DialogTitle>
+                    <DialogTitle className="text-primary">Book an Appointment with {provider.name}</DialogTitle>
                   </DialogHeader>
                   <div className="py-4">
-                    <div className="mb-4">
+                    <div className="mb-4 slide-in-right">
                       <h3 className="text-sm font-medium mb-2">Select a date</h3>
                       <Calendar
                         mode="single"
                         selected={bookingDate}
                         onSelect={setBookingDate}
-                        className="rounded-md border"
+                        className="rounded-md border transition-all hover:border-primary/50"
                         initialFocus
                       />
                     </div>
-                    <Button onClick={handleBookAppointment} className="w-full">Request Appointment</Button>
+                    <Button onClick={handleBookAppointment} className="w-full btn-transition hover-up transition-transform">
+                      Request Appointment
+                    </Button>
                   </div>
                 </DialogContent>
               </Dialog>
-              <Button variant="outline" className="flex items-center">
+              <Button variant="outline" className="flex items-center btn-transition hover-up">
                 <MessageSquare className="mr-2 h-4 w-4" />
                 <span>Message</span>
               </Button>

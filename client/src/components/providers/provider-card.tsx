@@ -30,7 +30,7 @@ export default function ProviderCard({ provider }: ProviderCardProps) {
   console.log("Image URL being used:", imageUrl);
   
   return (
-    <Card className="bg-white rounded-xl shadow-sm border border-neutral-200 overflow-hidden hover:shadow-md transition-shadow">
+    <Card className="card-hover bg-white rounded-xl shadow-sm border border-neutral-200 overflow-hidden">
       <div className="relative">
         {imageUrl && 
          imageUrl !== '/placeholder-avatar.jpg' && 
@@ -39,7 +39,7 @@ export default function ProviderCard({ provider }: ProviderCardProps) {
           <img 
             src={imageUrl} 
             alt={`${provider.name} portrait`} 
-            className="w-full h-48 object-cover"
+            className="w-full h-48 object-cover transition-transform hover:scale-105"
             onError={(e) => {
               console.log("Image failed to load:", imageUrl);
               e.currentTarget.src = "https://placehold.co/400x200/e0e0e0/6c757d?text=Provider";
@@ -51,12 +51,12 @@ export default function ProviderCard({ provider }: ProviderCardProps) {
           </div>
         )}
         {provider.isTopRated && (
-          <div className="absolute top-3 right-3 bg-amber-500 text-white px-2 py-1 rounded-lg text-sm font-medium">
+          <div className="absolute top-3 right-3 bg-amber-500 text-white px-2 py-1 rounded-lg text-sm font-medium fade-in">
             Top Rated
           </div>
         )}
         {provider.isAvailable24_7 && (
-          <div className="absolute top-3 right-3 bg-secondary text-white px-2 py-1 rounded-lg text-sm font-medium">
+          <div className="absolute top-3 right-3 bg-secondary text-white px-2 py-1 rounded-lg text-sm font-medium fade-in">
             Available 24/7
           </div>
         )}
@@ -92,11 +92,11 @@ export default function ProviderCard({ provider }: ProviderCardProps) {
         </div>
       </CardContent>
       <CardFooter className="border-t border-neutral-200 p-5 flex justify-between items-center">
-        <div>
+        <div className="slide-in-right">
           <p className="text-sm text-neutral-500">Starting from</p>
-          <p className="font-semibold text-neutral-800">{provider.startingPrice}</p>
+          <p className="font-semibold text-neutral-800 text-primary">{provider.startingPrice}</p>
         </div>
-        <Button asChild>
+        <Button asChild className="btn-transition hover-up">
           <Link href={`/providers/${provider.id}`}>
             View Profile
           </Link>
