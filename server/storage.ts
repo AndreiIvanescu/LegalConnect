@@ -142,7 +142,7 @@ export class DatabaseStorage implements IStorage {
             name: userData?.fullName || 'Unknown Provider',
             type: profile.providerType,
             rating: avgRating,
-            reviewCount: reviews.length,
+            reviewCount: reviewList.length,
             location: profile.location || 'Unknown',
             education: profile.education || '',
             specializations: specializationsList.map(s => s.name),
@@ -213,11 +213,11 @@ export class DatabaseStorage implements IStorage {
             .where(eq(services.providerId, profile.id));
           
           // Calculate rating based on reviews
-          const reviews = await db.select().from(reviews)
+          const reviewList = await db.select().from(reviews)
             .where(eq(reviews.revieweeId, profile.user_id));
           
-          const avgRating = reviews.length > 0 
-            ? reviews.reduce((sum: number, review: any) => sum + review.rating, 0) / reviews.length 
+          const avgRating = reviewList.length > 0 
+            ? reviewList.reduce((sum: number, review: any) => sum + review.rating, 0) / reviewList.length 
             : 0;
           
           // Format the provider data for the client
@@ -226,7 +226,7 @@ export class DatabaseStorage implements IStorage {
             name: userData?.fullName || 'Unknown Provider',
             type: profile.provider_type,
             rating: avgRating,
-            reviewCount: reviews.length,
+            reviewCount: reviewList.length,
             location: profile.location || 'Unknown',
             education: profile.education || '',
             specializations: specializationsList.map((s: any) => s.name),
