@@ -4,6 +4,8 @@ import { users, type User, type InsertUser,
   bookings, type Booking, type InsertBooking,
   reviews, type Review, type InsertReview,
   messages, type Message, type InsertMessage,
+  jobPostings, type JobPosting, type InsertJobPosting,
+  jobApplications, type JobApplication, type InsertJobApplication,
   specializations
 } from "@shared/schema";
 import session from "express-session";

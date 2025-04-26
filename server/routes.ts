@@ -5,7 +5,15 @@ import { setupAuth } from "./auth";
 import { z } from "zod";
 import { WebSocketServer } from 'ws';
 import { setupWebSocketServer } from './websocket';
-import { insertProviderProfileSchema, insertServiceSchema, insertBookingSchema, insertReviewSchema, insertMessageSchema } from "@shared/schema";
+import { 
+  insertProviderProfileSchema, 
+  insertServiceSchema, 
+  insertBookingSchema, 
+  insertReviewSchema, 
+  insertMessageSchema,
+  insertJobPostingSchema,
+  insertJobApplicationSchema 
+} from "@shared/schema";
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
@@ -512,6 +520,269 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error uploading file:", error);
       res.status(500).json({ message: "Failed to upload file" });
+    }
+  });
+
+  // JOB POSTING ROUTES
+  // Create a job posting
+  app.post("/api/jobs", async (req, res) => {
+    if (!req.isAuthenticated() || req.user.role !== 'client') {
+      return res.status(403).json({ message: "Only clients can create job postings" });
+    }
+
+    try {
+      const validatedData = insertJobPostingSchema.parse({
+        ...req.body,
+        clientId: req.user.id
+      });
+      
+      const jobPosting = await storage.createJobPosting(validatedData);
+      res.status(201).json(jobPosting);
+    } catch (error) {
+      res.status(400).json({ message: error instanceof Error ? error.message : "Invalid data" });
+    }
+  });
+
+  // Get job postings for current client
+  app.get("/api/jobs/my", async (req, res) => {
+    if (!req.isAuthenticated() || req.user.role !== 'client') {
+      return res.status(403).json({ message: "Access denied" });
+    }
+
+    try {
+      const jobPostings = await storage.getJobPostingsByClientId(req.user.id);
+      res.json(jobPostings);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch job postings" });
+    }
+  });
+
+  // Get job posting by ID
+  app.get("/api/jobs/:id", async (req, res) => {
+    try {
+      const jobId = parseInt(req.params.id);
+      const jobPosting = await storage.getJobPostingById(jobId);
+      
+      if (!jobPosting) {
+        return res.status(404).json({ message: "Job posting not found" });
+      }
+      
+      res.json(jobPosting);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch job posting" });
+    }
+  });
+
+  // Update job posting
+  app.patch("/api/jobs/:id", async (req, res) => {
+    if (!req.isAuthenticated() || req.user.role !== 'client') {
+      return res.status(403).json({ message: "Only clients can update job postings" });
+    }
+
+    try {
+      const jobId = parseInt(req.params.id);
+      const jobPosting = await storage.getJobPostingById(jobId);
+      
+      if (!jobPosting) {
+        return res.status(404).json({ message: "Job posting not found" });
+      }
+      
+      if (jobPosting.clientId !== req.user.id) {
+        return res.status(403).json({ message: "You don't have permission to update this job posting" });
+      }
+      
+      const updatedJobPosting = await storage.updateJobPosting(jobId, req.body);
+      res.json(updatedJobPosting);
+    } catch (error) {
+      res.status(400).json({ message: error instanceof Error ? error.message : "Invalid data" });
+    }
+  });
+
+  // Delete job posting
+  app.delete("/api/jobs/:id", async (req, res) => {
+    if (!req.isAuthenticated() || req.user.role !== 'client') {
+      return res.status(403).json({ message: "Only clients can delete job postings" });
+    }
+
+    try {
+      const jobId = parseInt(req.params.id);
+      const jobPosting = await storage.getJobPostingById(jobId);
+      
+      if (!jobPosting) {
+        return res.status(404).json({ message: "Job posting not found" });
+      }
+      
+      if (jobPosting.clientId !== req.user.id) {
+        return res.status(403).json({ message: "You don't have permission to delete this job posting" });
+      }
+      
+      await storage.deleteJobPosting(jobId);
+      res.status(204).send();
+    } catch (error) {
+      res.status(400).json({ message: error instanceof Error ? error.message : "Invalid data" });
+    }
+  });
+
+  // Get job postings by provider type (for providers to browse)
+  app.get("/api/jobs/provider-type/:type", async (req, res) => {
+    if (!req.isAuthenticated() || req.user.role !== 'provider') {
+      return res.status(403).json({ message: "Only providers can access this endpoint" });
+    }
+
+    try {
+      const providerType = req.params.type;
+      const jobPostings = await storage.getJobPostingsByProviderType(providerType);
+      res.json(jobPostings);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch job postings" });
+    }
+  });
+
+  // Get nearby job postings for providers
+  app.get("/api/jobs/nearby", async (req, res) => {
+    if (!req.isAuthenticated() || req.user.role !== 'provider') {
+      return res.status(403).json({ message: "Only providers can access this endpoint" });
+    }
+
+    try {
+      const { latitude, longitude, maxDistance = 10000 } = req.query;
+      
+      if (!latitude || !longitude) {
+        return res.status(400).json({ message: "Latitude and longitude are required" });
+      }
+      
+      const lat = parseFloat(latitude as string);
+      const lng = parseFloat(longitude as string);
+      const distance = parseInt(maxDistance as string);
+      
+      if (isNaN(lat) || isNaN(lng) || isNaN(distance)) {
+        return res.status(400).json({ message: "Invalid location parameters" });
+      }
+      
+      const jobPostings = await storage.getNearbyJobPostings(lat, lng, distance);
+      res.json(jobPostings);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch nearby job postings" });
+    }
+  });
+
+  // JOB APPLICATION ROUTES
+  // Apply for a job
+  app.post("/api/job-applications", async (req, res) => {
+    if (!req.isAuthenticated() || req.user.role !== 'provider') {
+      return res.status(403).json({ message: "Only providers can apply for jobs" });
+    }
+
+    try {
+      const providerProfile = await storage.getProviderProfileByUserId(req.user.id);
+      
+      if (!providerProfile) {
+        return res.status(404).json({ message: "Provider profile not found" });
+      }
+      
+      const validatedData = insertJobApplicationSchema.parse({
+        ...req.body,
+        providerId: providerProfile.id
+      });
+      
+      // Check if job exists
+      const jobPosting = await storage.getJobPostingById(validatedData.jobId);
+      if (!jobPosting) {
+        return res.status(404).json({ message: "Job posting not found" });
+      }
+      
+      // Check if already applied
+      const existingApplications = await storage.getJobApplicationsByJobId(validatedData.jobId);
+      const alreadyApplied = existingApplications.some(app => app.providerId === providerProfile.id);
+      
+      if (alreadyApplied) {
+        return res.status(400).json({ message: "You have already applied for this job" });
+      }
+      
+      const application = await storage.createJobApplication(validatedData);
+      res.status(201).json(application);
+    } catch (error) {
+      res.status(400).json({ message: error instanceof Error ? error.message : "Invalid data" });
+    }
+  });
+
+  // Get applications for a job posting
+  app.get("/api/jobs/:id/applications", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Authentication required" });
+    }
+
+    try {
+      const jobId = parseInt(req.params.id);
+      const jobPosting = await storage.getJobPostingById(jobId);
+      
+      if (!jobPosting) {
+        return res.status(404).json({ message: "Job posting not found" });
+      }
+      
+      // Check if user has permission to view applications
+      if (req.user.role === 'client' && jobPosting.clientId !== req.user.id) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      
+      const applications = await storage.getJobApplicationsByJobId(jobId);
+      res.json(applications);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch job applications" });
+    }
+  });
+
+  // Get applications submitted by provider
+  app.get("/api/job-applications/my", async (req, res) => {
+    if (!req.isAuthenticated() || req.user.role !== 'provider') {
+      return res.status(403).json({ message: "Only providers can access this endpoint" });
+    }
+
+    try {
+      const providerProfile = await storage.getProviderProfileByUserId(req.user.id);
+      
+      if (!providerProfile) {
+        return res.status(404).json({ message: "Provider profile not found" });
+      }
+      
+      const applications = await storage.getJobApplicationsByProviderId(providerProfile.id);
+      res.json(applications);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch job applications" });
+    }
+  });
+
+  // Update application status (accept/reject by client)
+  app.patch("/api/job-applications/:id", async (req, res) => {
+    if (!req.isAuthenticated() || req.user.role !== 'client') {
+      return res.status(403).json({ message: "Only clients can update application status" });
+    }
+
+    try {
+      const applicationId = parseInt(req.params.id);
+      const application = await storage.getJobApplicationById(applicationId);
+      
+      if (!application) {
+        return res.status(404).json({ message: "Job application not found" });
+      }
+      
+      // Check if job belongs to the client
+      const jobPosting = await storage.getJobPostingById(application.jobId);
+      
+      if (!jobPosting || jobPosting.clientId !== req.user.id) {
+        return res.status(403).json({ message: "You don't have permission to update this application" });
+      }
+      
+      const updatedApplication = await storage.updateJobApplication(applicationId, req.body);
+      
+      // If application is accepted, update job posting status to assigned
+      if (req.body.status === 'accepted') {
+        await storage.updateJobPosting(jobPosting.id, { status: 'assigned' });
+      }
+      
+      res.json(updatedApplication);
+    } catch (error) {
+      res.status(400).json({ message: error instanceof Error ? error.message : "Invalid data" });
     }
   });
 
