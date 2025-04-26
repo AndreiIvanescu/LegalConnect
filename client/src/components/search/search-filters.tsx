@@ -11,12 +11,14 @@ interface SearchFiltersProps {
 
 export default function SearchFilters({ onSearch }: SearchFiltersProps) {
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [showLocationFilter, setShowLocationFilter] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [specialization, setSpecialization] = useState("all");
   const [minPrice, setMinPrice] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
   const [availability, setAvailability] = useState("any");
   const [rating, setRating] = useState("any");
+  const [location, setLocation] = useState("any");
 
   const handleSubmit = () => {
     // Convert special "all" and "any" values to empty strings or null values for filtering
@@ -25,7 +27,8 @@ export default function SearchFilters({ onSearch }: SearchFiltersProps) {
       specialization: specialization === "all" ? null : specialization,
       priceRange: { min: minPrice, max: maxPrice },
       availability: availability === "any" ? null : availability,
-      rating: rating === "any" ? null : rating
+      rating: rating === "any" ? null : rating,
+      location: location === "any" ? null : location
     };
     
     onSearch(filters);
@@ -58,8 +61,17 @@ export default function SearchFilters({ onSearch }: SearchFiltersProps) {
                 <ChevronDown className="ml-2 h-4 w-4" />
               }
             </Button>
-            <Button variant="outline" className="py-6 md:py-2 flex items-center">
-              <MapPin className="mr-2 h-4 w-4" /> Location
+            <Button 
+              variant="outline" 
+              className="py-6 md:py-2 flex items-center"
+              onClick={() => setShowLocationFilter(!showLocationFilter)}
+            >
+              <MapPin className="mr-2 h-4 w-4" /> 
+              Location
+              {showLocationFilter ? 
+                <ChevronUp className="ml-2 h-4 w-4" /> : 
+                <ChevronDown className="ml-2 h-4 w-4" />
+              }
             </Button>
           </div>
         </div>
@@ -129,6 +141,36 @@ export default function SearchFilters({ onSearch }: SearchFiltersProps) {
                   <SelectItem value="3">3+ stars</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+          </div>
+        )}
+        
+        {/* Location Filters */}
+        {showLocationFilter && (
+          <div className="mt-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-1">City</label>
+                <Select value={location} onValueChange={setLocation}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select a city" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="any">Any location</SelectItem>
+                    <SelectItem value="bucharest">Bucharest</SelectItem>
+                    <SelectItem value="cluj-napoca">Cluj-Napoca</SelectItem>
+                    <SelectItem value="timisoara">Timișoara</SelectItem>
+                    <SelectItem value="iasi">Iași</SelectItem>
+                    <SelectItem value="constanta">Constanța</SelectItem>
+                    <SelectItem value="brasov">Brașov</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="mt-4 flex justify-end">
+              <Button onClick={handleSubmit}>
+                Apply Location
+              </Button>
             </div>
           </div>
         )}
