@@ -146,16 +146,23 @@ export class DatabaseStorage implements IStorage {
   // Provider methods
   async getAllProviders(): Promise<any[]> {
     try {
-      // Get provider profiles
-      const profiles = await db.select().from(providerProfiles);
+      // Get provider profiles - use raw query to handle missing column
+      const profiles = await db.execute(`
+        SELECT 
+          id, user_id, provider_type, education, graduation_year, years_of_experience, 
+          description, languages, location, address, latitude, longitude, service_radius, 
+          working_hours, is_24_7, is_top_rated, completed_services,
+          COALESCE(image_url, '') AS image_url
+        FROM provider_profiles
+      `);
       
       // If we don't have any profiles yet, return empty array to avoid further errors
-      if (!profiles || profiles.length === 0) {
+      if (!profiles.rows || profiles.rows.length === 0) {
         return [];
       }
       
       // Fetch additional data for each profile
-      const providersWithDetails = await Promise.all(profiles.map(async (profile) => {
+      const providersWithDetails = await Promise.all(profiles.rows.map(async (profile) => {
         try {
           // Get user data
           const [userData] = await db.select().from(users).where(eq(users.id, profile.userId));
@@ -311,15 +318,43 @@ export class DatabaseStorage implements IStorage {
 
   async getProvider(id: number): Promise<any | undefined> {
     try {
-      // Get provider profile
-      const [profile] = await db
-        .select()
-        .from(providerProfiles)
-        .where(eq(providerProfiles.id, id));
+      // Get provider profile using raw query to handle missing column
+      const result = await db.execute(`
+        SELECT 
+          id, user_id, provider_type, education, graduation_year, years_of_experience, 
+          description, languages, location, address, latitude, longitude, service_radius, 
+          working_hours, is_24_7, is_top_rated, completed_services,
+          COALESCE(image_url, '') AS image_url
+        FROM provider_profiles
+        WHERE id = $1
+      `, [id]);
       
-      if (!profile) {
+      if (!result.rows || result.rows.length === 0) {
         return undefined;
       }
+      
+      // Convert from snake_case to camelCase
+      const row = result.rows[0];
+      const profile = {
+        id: row.id,
+        userId: row.user_id,
+        providerType: row.provider_type,
+        education: row.education,
+        graduationYear: row.graduation_year,
+        yearsOfExperience: row.years_of_experience,
+        description: row.description,
+        languages: row.languages,
+        location: row.location,
+        address: row.address,
+        latitude: row.latitude,
+        longitude: row.longitude,
+        serviceRadius: row.service_radius,
+        workingHours: row.working_hours,
+        is24_7: row.is_24_7,
+        isTopRated: row.is_top_rated,
+        completedServices: row.completed_services,
+        imageUrl: row.image_url
+      };
       
       // Get user data
       const [userData] = await db.select().from(users).where(eq(users.id, profile.userId));
@@ -373,12 +408,50 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getProviderProfileByUserId(userId: number): Promise<ProviderProfile | undefined> {
-    const [profile] = await db
-      .select()
-      .from(providerProfiles)
-      .where(eq(providerProfiles.userId, userId));
-    
-    return profile || undefined;
+    try {
+      // Use raw query to avoid missing column error
+      const result = await db.execute(`
+        SELECT 
+          id, user_id, provider_type, education, graduation_year, years_of_experience, 
+          description, languages, location, address, latitude, longitude, service_radius, 
+          working_hours, is_24_7, is_top_rated, completed_services,
+          COALESCE(image_url, '') AS image_url
+        FROM provider_profiles
+        WHERE user_id = $1
+      `, [userId]);
+      
+      if (!result.rows || result.rows.length === 0) {
+        return undefined;
+      }
+
+      // Convert from snake_case to camelCase
+      const row = result.rows[0];
+      const profile = {
+        id: row.id,
+        userId: row.user_id,
+        providerType: row.provider_type,
+        education: row.education,
+        graduationYear: row.graduation_year,
+        yearsOfExperience: row.years_of_experience,
+        description: row.description,
+        languages: row.languages,
+        location: row.location,
+        address: row.address,
+        latitude: row.latitude,
+        longitude: row.longitude,
+        serviceRadius: row.service_radius,
+        workingHours: row.working_hours,
+        is24_7: row.is_24_7,
+        isTopRated: row.is_top_rated,
+        completedServices: row.completed_services,
+        imageUrl: row.image_url
+      };
+      
+      return profile;
+    } catch (error) {
+      console.error("Error in getProviderProfileByUserId:", error);
+      return undefined;
+    }
   }
 
   async createProviderProfile(profile: any): Promise<ProviderProfile> {    

@@ -620,6 +620,25 @@ export default function ProviderDashboard() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-6">
+                  <div className="flex flex-col items-center gap-4 mb-6">
+                    {profile.imageUrl ? (
+                      <div className="relative h-32 w-32 rounded-full overflow-hidden border-2 border-primary">
+                        <img
+                          src={profile.imageUrl}
+                          alt="Profile picture"
+                          className="h-full w-full object-cover"
+                        />
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-center h-32 w-32 rounded-full bg-muted">
+                        <User className="h-16 w-16 text-muted-foreground" />
+                      </div>
+                    )}
+                    <Button variant="outline" className="flex items-center gap-2">
+                      <ImagePlus className="h-4 w-4" /> Update Profile Picture
+                    </Button>
+                  </div>
+                  
                   <div>
                     <h3 className="text-lg font-medium">Basic Information</h3>
                     <p className="text-sm text-muted-foreground mb-4">
