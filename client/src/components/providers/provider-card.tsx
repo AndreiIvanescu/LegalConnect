@@ -22,17 +22,24 @@ interface ProviderCardProps {
 }
 
 export default function ProviderCard({ provider }: ProviderCardProps) {
+  // Log the provider data for debugging
+  console.log("Provider data:", provider);
+  console.log("Image URL:", provider.imageUrl);
+  
+  // Use a local placeholder image path
+  const placeholderImageUrl = "/assets/placeholder-profile.jpg";
+  
   return (
     <Card className="bg-white rounded-xl shadow-sm border border-neutral-200 overflow-hidden hover:shadow-md transition-shadow">
       <div className="relative">
-        {provider.imageUrl ? (
+        {provider.imageUrl && provider.imageUrl !== '/placeholder-avatar.jpg' ? (
           <img 
             src={provider.imageUrl} 
             alt={`${provider.name} portrait`} 
             className="w-full h-48 object-cover"
             onError={(e) => {
               // If image fails to load, replace with a placeholder
-              e.currentTarget.src = "https://via.placeholder.com/300x200?text=No+Image+Available";
+              e.currentTarget.src = "https://placehold.co/400x200/e0e0e0/6c757d?text=Provider";
             }}
           />
         ) : (
