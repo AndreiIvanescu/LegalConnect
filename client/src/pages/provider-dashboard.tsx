@@ -8,7 +8,14 @@ import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { insertServiceSchema } from '@shared/schema';
-import { formatPrice, parsePrice, getUserCountry, getUserCurrencySymbol } from '@/lib/currency';
+import { 
+  formatPrice, 
+  parsePrice, 
+  getUserCountry, 
+  getUserCurrencySymbol, 
+  getCurrencyForCountry,
+  formatPriceValue
+} from '@/lib/currency';
 
 import {
   Card,
@@ -519,8 +526,19 @@ export default function ProviderDashboard() {
                     </TableHeader>
                     <TableBody>
                       {services.map((service: any) => (
-                        <TableRow key={service.id}>
-                          <TableCell className="font-medium">{service.title}</TableCell>
+                        <TableRow 
+                          key={service.id} 
+                          className="group cursor-pointer hover:bg-muted/50"
+                          onClick={() => handleEditService(service)}
+                        >
+                          <TableCell className="font-medium">
+                            <div className="flex items-center">
+                              {service.title}
+                              <span className="ml-2 text-xs text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity">
+                                (Click to edit)
+                              </span>
+                            </div>
+                          </TableCell>
                           <TableCell>
                             <Badge variant="outline" className="capitalize">
                               {service.priceType === 'fixed' ? 'Fixed Price' : 'Percentage Rate'}
@@ -530,20 +548,28 @@ export default function ProviderDashboard() {
                           <TableCell className="text-right">
                             <div className="flex justify-end gap-2">
                               <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => handleEditService(service)}
+                                variant="outline"
+                                size="sm"
+                                className="h-8 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleEditService(service);
+                                }}
                               >
                                 <Edit className="h-4 w-4" />
-                                <span className="sr-only">Edit</span>
+                                <span className="hidden md:inline">Edit</span>
                               </Button>
                               <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => handleDeleteService(service.id)}
+                                variant="outline"
+                                size="sm"
+                                className="h-8 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 text-destructive hover:text-destructive border-destructive/30 hover:border-destructive"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDeleteService(service.id);
+                                }}
                               >
-                                <Trash2 className="h-4 w-4 text-destructive" />
-                                <span className="sr-only">Delete</span>
+                                <Trash2 className="h-4 w-4" />
+                                <span className="hidden md:inline">Delete</span>
                               </Button>
                             </div>
                           </TableCell>
@@ -725,9 +751,21 @@ export default function ProviderDashboard() {
 
       {/* Add/Edit Service Dialog */}
       <Dialog open={isAddServiceDialogOpen} onOpenChange={setIsAddServiceDialogOpen}>
-        <DialogContent className="sm:max-w-[550px]">
-          <DialogHeader>
-            <DialogTitle>{serviceToEdit ? "Edit Service" : "Add New Service"}</DialogTitle>
+        <DialogContent className="sm:max-w-[550px] transition-all duration-300 ease-in-out">
+          <DialogHeader className={`${serviceToEdit ? "bg-blue-50 p-4 rounded-md mb-4" : ""}`}>
+            <DialogTitle className="flex items-center gap-2">
+              {serviceToEdit ? (
+                <>
+                  <Edit className="h-5 w-5 text-blue-600" />
+                  <span>Edit Service: <span className="text-blue-600">{serviceToEdit?.title}</span></span>
+                </>
+              ) : (
+                <>
+                  <Plus className="h-5 w-5" />
+                  <span>Add New Service</span>
+                </>
+              )}
+            </DialogTitle>
             <DialogDescription>
               {serviceToEdit 
                 ? "Update the details of your existing service"
@@ -913,7 +951,9 @@ export default function ProviderDashboard() {
                 <Button 
                   type="submit"
                   disabled={createServiceMutation.isPending || updateServiceMutation.isPending}
+                  className={serviceToEdit ? "bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2" : ""}
                 >
+                  {serviceToEdit && !updateServiceMutation.isPending && <Edit className="h-4 w-4" />}
                   {(createServiceMutation.isPending || updateServiceMutation.isPending) 
                     ? "Saving..." 
                     : serviceToEdit ? "Update Service" : "Add Service"
