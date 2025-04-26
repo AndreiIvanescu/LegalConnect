@@ -324,7 +324,7 @@ export default function ProfilePage() {
                           </div>
                           
                           <div className="flex justify-end">
-                            <Button>Edit Provider Profile</Button>
+                            <Button onClick={() => navigate('/profile/setup')}>Edit Provider Profile</Button>
                           </div>
                         </div>
                       ) : (
