@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useQuery } from "@tanstack/react-query";
-import { User, Settings, Star, Clock, MapPin, Briefcase } from "lucide-react";
+import { User, Settings, Star, Clock, MapPin, Briefcase, Calendar } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -15,10 +15,12 @@ import { useToast } from "@/hooks/use-toast";
 import MobileHeader from "@/components/layout/mobile-header";
 import DesktopHeader from "@/components/layout/desktop-header";
 import MobileBottomNav from "@/components/layout/mobile-bottom-nav";
+import { useLocation } from "wouter";
 
 export default function ProfilePage() {
   const { user, logoutMutation } = useAuth();
   const { toast } = useToast();
+  const [location, navigate] = useLocation();
   const [activeTab, setActiveTab] = useState("profile");
   
   // For profile editing
@@ -333,7 +335,7 @@ export default function ProfilePage() {
                           <p className="text-neutral-500 mb-4">
                             You need to complete your provider profile to start offering services.
                           </p>
-                          <Button onClick={() => window.location.href = '/profile/setup'}>Set Up Provider Profile</Button>
+                          <Button onClick={() => navigate('/profile/setup')}>Set Up Provider Profile</Button>
                         </div>
                       )}
                     </>
