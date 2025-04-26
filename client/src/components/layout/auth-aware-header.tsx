@@ -49,37 +49,43 @@ function AuthAwareHeader() {
     <header className="sticky top-0 z-40 w-full border-b bg-background">
       <div className="container flex h-16 items-center justify-between py-4">
         <div className="flex items-center gap-8">
-          <Link href="/" className="flex items-center gap-2">
+          <div 
+            className="flex items-center gap-2 cursor-pointer" 
+            onClick={() => navigate('/')}
+          >
             <Shield className="h-6 w-6 text-primary" />
             <span className="font-semibold text-lg">LegalMatch</span>
-          </Link>
+          </div>
 
           {!isMobile && (
             <NavigationMenu>
               <NavigationMenuList>
                 <NavigationMenuItem>
-                  <Link href="/providers">
-                    <NavigationMenuLink className={navigationMenuTriggerStyle()}>
-                      Find Providers
-                    </NavigationMenuLink>
-                  </Link>
+                  <NavigationMenuLink 
+                    className={navigationMenuTriggerStyle()} 
+                    onClick={() => navigate('/providers')}
+                  >
+                    Find Providers
+                  </NavigationMenuLink>
                 </NavigationMenuItem>
                 
                 {user && (
                   <>
                     <NavigationMenuItem>
-                      <Link href="/bookings">
-                        <NavigationMenuLink className={navigationMenuTriggerStyle()}>
-                          Bookings
-                        </NavigationMenuLink>
-                      </Link>
+                      <NavigationMenuLink 
+                        className={navigationMenuTriggerStyle()}
+                        onClick={() => navigate('/bookings')}
+                      >
+                        Bookings
+                      </NavigationMenuLink>
                     </NavigationMenuItem>
                     <NavigationMenuItem>
-                      <Link href="/messages">
-                        <NavigationMenuLink className={navigationMenuTriggerStyle()}>
-                          Messages
-                        </NavigationMenuLink>
-                      </Link>
+                      <NavigationMenuLink 
+                        className={navigationMenuTriggerStyle()}
+                        onClick={() => navigate('/messages')}
+                      >
+                        Messages
+                      </NavigationMenuLink>
                     </NavigationMenuItem>
                   </>
                 )}
@@ -112,38 +118,50 @@ function AuthAwareHeader() {
                         </div>
                       </div>
                       <SheetClose asChild>
-                        <Link href="/bookings">
-                          <Button variant="ghost" className="justify-start w-full" size="sm">
-                            <Calendar className="mr-2 h-4 w-4" />
-                            Bookings
-                          </Button>
-                        </Link>
+                        <Button 
+                          variant="ghost" 
+                          className="justify-start w-full" 
+                          size="sm"
+                          onClick={() => navigate('/bookings')}
+                        >
+                          <Calendar className="mr-2 h-4 w-4" />
+                          Bookings
+                        </Button>
                       </SheetClose>
                       <SheetClose asChild>
-                        <Link href="/messages">
-                          <Button variant="ghost" className="justify-start w-full" size="sm">
-                            <Mail className="mr-2 h-4 w-4" />
-                            Messages
-                          </Button>
-                        </Link>
+                        <Button 
+                          variant="ghost" 
+                          className="justify-start w-full" 
+                          size="sm"
+                          onClick={() => navigate('/messages')}
+                        >
+                          <Mail className="mr-2 h-4 w-4" />
+                          Messages
+                        </Button>
                       </SheetClose>
                       {user.role === 'provider' && (
                         <SheetClose asChild>
-                          <Link href="/provider/dashboard">
-                            <Button variant="ghost" className="justify-start w-full" size="sm">
-                              <Shield className="mr-2 h-4 w-4" />
-                              Provider Dashboard
-                            </Button>
-                          </Link>
+                          <Button 
+                            variant="ghost" 
+                            className="justify-start w-full" 
+                            size="sm"
+                            onClick={() => navigate('/provider/dashboard')}
+                          >
+                            <Shield className="mr-2 h-4 w-4" />
+                            Provider Dashboard
+                          </Button>
                         </SheetClose>
                       )}
                       <SheetClose asChild>
-                        <Link href="/profile">
-                          <Button variant="ghost" className="justify-start w-full" size="sm">
-                            <User className="mr-2 h-4 w-4" />
-                            Profile
-                          </Button>
-                        </Link>
+                        <Button 
+                          variant="ghost" 
+                          className="justify-start w-full" 
+                          size="sm"
+                          onClick={() => navigate('/profile')}
+                        >
+                          <User className="mr-2 h-4 w-4" />
+                          Profile
+                        </Button>
                       </SheetClose>
                       <SheetClose asChild>
                         <Button 

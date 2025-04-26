@@ -35,15 +35,17 @@ function Router() {
 
 function App() {
   return (
-    <TooltipProvider>
-      <div className="relative min-h-screen flex flex-col">
-        <AuthAwareHeader />
-        <main className="flex-1">
-          <Router />
-        </main>
-        <Toaster />
-      </div>
-    </TooltipProvider>
+    <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+      <TooltipProvider>
+        <div className="relative min-h-screen flex flex-col">
+          <AuthAwareHeader />
+          <main className="flex-1">
+            <Router />
+          </main>
+          <Toaster />
+        </div>
+      </TooltipProvider>
+    </ThemeProvider>
   );
 }
 
