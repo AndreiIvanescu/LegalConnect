@@ -12,6 +12,9 @@ export const userRoleEnum = pgEnum('user_role', ['client', 'provider']);
 // Enum for provider types
 export const providerTypeEnum = pgEnum('provider_type', ['notary', 'judicial_executor', 'lawyer', 'judge']);
 
+// Enum for job status
+export const jobStatusEnum = pgEnum('job_status', ['open', 'assigned', 'completed', 'cancelled']);
+
 // Users table
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
@@ -96,6 +99,38 @@ export const reviews = pgTable("reviews", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Job postings table (client-initiated requests for services)
+export const jobPostings = pgTable("job_postings", {
+  id: serial("id").primaryKey(),
+  clientId: integer("client_id").notNull().references(() => users.id),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  providerType: providerTypeEnum("provider_type").notNull(),
+  priceType: text("price_type").notNull(), // fixed, hourly
+  budget: integer("budget"), // in smallest currency unit (bani/cents)
+  hourlyRate: integer("hourly_rate"), // in smallest currency unit (bani/cents)
+  location: text("location"),
+  latitude: real("latitude"),
+  longitude: real("longitude"),
+  urgency: text("urgency"), // normal, urgent, very urgent
+  deadline: timestamp("deadline"),
+  status: jobStatusEnum("status").notNull().default('open'),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Job applications (providers applying for jobs)
+export const jobApplications = pgTable("job_applications", {
+  id: serial("id").primaryKey(),
+  jobId: integer("job_id").notNull().references(() => jobPostings.id),
+  providerId: integer("provider_id").notNull().references(() => providerProfiles.id),
+  coverLetter: text("cover_letter"),
+  proposedPrice: integer("proposed_price"), // in smallest currency unit (bani/cents)
+  proposedDeadline: timestamp("proposed_deadline"),
+  status: text("status").notNull().default('pending'), // pending, accepted, rejected
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Messages table
 export const messages = pgTable("messages", {
   id: serial("id").primaryKey(),
@@ -125,6 +160,12 @@ export const insertReviewSchema = createInsertSchema(reviews)
 export const insertMessageSchema = createInsertSchema(messages)
   .omit({ id: true, createdAt: true, read: true });
 
+export const insertJobPostingSchema = createInsertSchema(jobPostings)
+  .omit({ id: true, createdAt: true, updatedAt: true, status: true });
+
+export const insertJobApplicationSchema = createInsertSchema(jobApplications)
+  .omit({ id: true, createdAt: true, status: true });
+
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -143,6 +184,12 @@ export type InsertReview = z.infer<typeof insertReviewSchema>;
 
 export type Message = typeof messages.$inferSelect;
 export type InsertMessage = z.infer<typeof insertMessageSchema>;
+
+export type JobPosting = typeof jobPostings.$inferSelect;
+export type InsertJobPosting = z.infer<typeof insertJobPostingSchema>;
+
+export type JobApplication = typeof jobApplications.$inferSelect;
+export type InsertJobApplication = z.infer<typeof insertJobApplicationSchema>;
 
 // Login schema
 export const loginSchema = z.object({

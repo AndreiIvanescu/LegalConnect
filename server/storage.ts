@@ -60,6 +60,23 @@ export interface IStorage {
   getConversationsForUser(userId: number): Promise<any[]>;
   getMessagesBetweenUsers(userId1: number, userId2: number): Promise<Message[]>;
   
+  // Job Posting methods
+  createJobPosting(jobPosting: InsertJobPosting): Promise<JobPosting>;
+  getJobPostingById(id: number): Promise<JobPosting | undefined>;
+  getJobPostingsByClientId(clientId: number): Promise<JobPosting[]>;
+  getJobPostingsByProviderType(providerType: string): Promise<JobPosting[]>;
+  getNearbyJobPostings(latitude: number, longitude: number, maxDistance: number): Promise<JobPosting[]>;
+  updateJobPosting(id: number, data: Partial<JobPosting>): Promise<JobPosting>;
+  deleteJobPosting(id: number): Promise<void>;
+  
+  // Job Application methods
+  createJobApplication(application: InsertJobApplication): Promise<JobApplication>;
+  getJobApplicationById(id: number): Promise<JobApplication | undefined>;
+  getJobApplicationsByJobId(jobId: number): Promise<JobApplication[]>;
+  getJobApplicationsByProviderId(providerId: number): Promise<JobApplication[]>;
+  updateJobApplication(id: number, data: Partial<JobApplication>): Promise<JobApplication>;
+  deleteJobApplication(id: number): Promise<void>;
+  
   // Session store
   sessionStore: any;
 }
@@ -579,6 +596,140 @@ export class DatabaseStorage implements IStorage {
           )
         )
       );
+  }
+
+  // Job Posting methods
+  async createJobPosting(jobPosting: InsertJobPosting): Promise<JobPosting> {
+    const [newJobPosting] = await db
+      .insert(jobPostings)
+      .values(jobPosting)
+      .returning();
+    
+    return newJobPosting;
+  }
+
+  async getJobPostingById(id: number): Promise<JobPosting | undefined> {
+    const [jobPosting] = await db
+      .select()
+      .from(jobPostings)
+      .where(eq(jobPostings.id, id));
+    
+    return jobPosting || undefined;
+  }
+
+  async getJobPostingsByClientId(clientId: number): Promise<JobPosting[]> {
+    return await db
+      .select()
+      .from(jobPostings)
+      .where(eq(jobPostings.clientId, clientId))
+      .orderBy(desc(jobPostings.createdAt));
+  }
+
+  async getJobPostingsByProviderType(providerType: string): Promise<JobPosting[]> {
+    return await db
+      .select()
+      .from(jobPostings)
+      .where(eq(jobPostings.providerType, providerType as any))
+      .where(eq(jobPostings.status, 'open'))
+      .orderBy(desc(jobPostings.createdAt));
+  }
+
+  async getNearbyJobPostings(latitude: number, longitude: number, maxDistance: number): Promise<JobPosting[]> {
+    try {
+      // Use PostGIS for spatial query to find jobs within distance
+      const { rows: nearbyJobs } = await pool.query(`
+        SELECT 
+          j.*,
+          ST_Distance(
+            ST_SetSRID(ST_MakePoint(j.longitude, j.latitude), 4326)::geography, 
+            ST_SetSRID(ST_MakePoint($2, $1), 4326)::geography
+          ) as distance
+        FROM job_postings j
+        WHERE 
+          j.latitude IS NOT NULL AND j.longitude IS NOT NULL
+          AND j.status = 'open'
+          AND ST_DWithin(
+            ST_SetSRID(ST_MakePoint(j.longitude, j.latitude), 4326)::geography,
+            ST_SetSRID(ST_MakePoint($2, $1), 4326)::geography,
+            $3
+          )
+        ORDER BY distance ASC
+      `, [latitude, longitude, maxDistance]);
+
+      return nearbyJobs || [];
+    } catch (error) {
+      console.error("Error in getNearbyJobPostings:", error);
+      return [];
+    }
+  }
+
+  async updateJobPosting(id: number, data: Partial<JobPosting>): Promise<JobPosting> {
+    const [updatedJobPosting] = await db
+      .update(jobPostings)
+      .set(data)
+      .where(eq(jobPostings.id, id))
+      .returning();
+    
+    if (!updatedJobPosting) {
+      throw new Error("Job posting not found");
+    }
+    
+    return updatedJobPosting;
+  }
+
+  async deleteJobPosting(id: number): Promise<void> {
+    await db.delete(jobPostings).where(eq(jobPostings.id, id));
+  }
+
+  // Job Application methods
+  async createJobApplication(application: InsertJobApplication): Promise<JobApplication> {
+    const [newApplication] = await db
+      .insert(jobApplications)
+      .values(application)
+      .returning();
+    
+    return newApplication;
+  }
+
+  async getJobApplicationById(id: number): Promise<JobApplication | undefined> {
+    const [application] = await db
+      .select()
+      .from(jobApplications)
+      .where(eq(jobApplications.id, id));
+    
+    return application || undefined;
+  }
+
+  async getJobApplicationsByJobId(jobId: number): Promise<JobApplication[]> {
+    return await db
+      .select()
+      .from(jobApplications)
+      .where(eq(jobApplications.jobId, jobId));
+  }
+
+  async getJobApplicationsByProviderId(providerId: number): Promise<JobApplication[]> {
+    return await db
+      .select()
+      .from(jobApplications)
+      .where(eq(jobApplications.providerId, providerId));
+  }
+
+  async updateJobApplication(id: number, data: Partial<JobApplication>): Promise<JobApplication> {
+    const [updatedApplication] = await db
+      .update(jobApplications)
+      .set(data)
+      .where(eq(jobApplications.id, id))
+      .returning();
+    
+    if (!updatedApplication) {
+      throw new Error("Job application not found");
+    }
+    
+    return updatedApplication;
+  }
+
+  async deleteJobApplication(id: number): Promise<void> {
+    await db.delete(jobApplications).where(eq(jobApplications.id, id));
   }
 }
 
