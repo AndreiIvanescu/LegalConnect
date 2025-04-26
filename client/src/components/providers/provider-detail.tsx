@@ -200,33 +200,41 @@ export default function ProviderDetail({ providerId }: ProviderDetailProps) {
 
           {/* Provider Tabs */}
           <Tabs defaultValue="overview" value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="mb-6">
-              <TabsTrigger value="overview">Overview</TabsTrigger>
-              <TabsTrigger value="services">Services</TabsTrigger>
-              <TabsTrigger value="reviews">Reviews</TabsTrigger>
-              <TabsTrigger value="availability">Availability</TabsTrigger>
+            <TabsList className="mb-6 relative overflow-hidden">
+              <TabsTrigger value="overview" className="transition-all relative z-10">
+                <span className="transition-colors">Overview</span>
+              </TabsTrigger>
+              <TabsTrigger value="services" className="transition-all relative z-10">
+                <span className="transition-colors">Services</span>
+              </TabsTrigger>
+              <TabsTrigger value="reviews" className="transition-all relative z-10">
+                <span className="transition-colors">Reviews</span>
+              </TabsTrigger>
+              <TabsTrigger value="availability" className="transition-all relative z-10">
+                <span className="transition-colors">Availability</span>
+              </TabsTrigger>
             </TabsList>
 
             {/* Overview Tab Content */}
-            <TabsContent value="overview">
+            <TabsContent value="overview" className="fade-in">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="md:col-span-2">
-                  <h2 className="text-lg font-semibold mb-4">About</h2>
+                <div className="md:col-span-2 slide-in-right">
+                  <h2 className="text-lg font-semibold mb-4 text-primary">About</h2>
                   <p className="text-neutral-700 mb-4">
                     {provider.description || `With over ${provider.yearsOfExperience} years of experience as a ${provider.type}, I specialize in ${provider.specializations.join(', ')}. My office is committed to providing efficient, accurate, and professional legal services to individuals and businesses throughout ${provider.location}.`}
                   </p>
                   
-                  <h2 className="text-lg font-semibold mt-6 mb-4">Education & Credentials</h2>
-                  <div className="flex items-start mb-3">
-                    <GraduationCap className="mt-1 text-neutral-500 w-5 h-5" />
+                  <h2 className="text-lg font-semibold mt-6 mb-4 text-primary">Education & Credentials</h2>
+                  <div className="flex items-start mb-3 transition-all hover:bg-neutral-50 p-2 rounded-lg">
+                    <GraduationCap className="mt-1 text-primary w-5 h-5" />
                     <div className="ml-3">
                       <p className="font-medium">{provider.education.split(',')[0]}</p>
                       <p className="text-neutral-600">{provider.education.split(',')[1] || "Doctor of Law"}</p>
                     </div>
                   </div>
                   {provider.credentials && provider.credentials.map((credential, index) => (
-                    <div key={index} className="flex items-start mb-3">
-                      <IdCard className="mt-1 text-neutral-500 w-5 h-5" />
+                    <div key={index} className="flex items-start mb-3 transition-all hover:bg-neutral-50 p-2 rounded-lg">
+                      <IdCard className="mt-1 text-primary w-5 h-5" />
                       <div className="ml-3">
                         <p className="font-medium">{credential.organization}</p>
                         <p className="text-neutral-600">{credential.title}, {credential.year}</p>
@@ -234,37 +242,37 @@ export default function ProviderDetail({ providerId }: ProviderDetailProps) {
                     </div>
                   ))}
                   
-                  <h2 className="text-lg font-semibold mt-6 mb-4">Specializations</h2>
+                  <h2 className="text-lg font-semibold mt-6 mb-4 text-primary">Specializations</h2>
                   <div className="flex flex-wrap gap-2">
                     {provider.specializations.map((spec, index) => (
-                      <Badge key={index} variant="secondary" className="bg-primary-50 text-primary-700 hover:bg-primary-100 px-3 py-1 rounded-full">
+                      <Badge key={index} variant="secondary" className="bg-primary-50 text-primary-700 hover:bg-primary-100 px-3 py-1 rounded-full transition-all hover:scale-105">
                         {spec}
                       </Badge>
                     ))}
                   </div>
                 </div>
                 
-                <div>
-                  <Card>
+                <div className="slide-in-right" style={{ animationDelay: '0.1s' }}>
+                  <Card className="card-hover">
                     <CardContent className="pt-6">
-                      <h2 className="text-lg font-semibold mb-4">Quick Information</h2>
+                      <h2 className="text-lg font-semibold mb-4 text-primary">Quick Information</h2>
                       
-                      <div className="mb-4">
+                      <div className="mb-4 transition-all hover:bg-neutral-50 p-2 rounded-lg">
                         <p className="text-sm text-neutral-500 mb-1">Years of Experience</p>
                         <p className="font-semibold">{provider.yearsOfExperience}+ years</p>
                       </div>
                       
-                      <div className="mb-4">
+                      <div className="mb-4 transition-all hover:bg-neutral-50 p-2 rounded-lg">
                         <p className="text-sm text-neutral-500 mb-1">Languages</p>
                         <p className="font-medium">{provider.languages?.join(', ') || 'Romanian, English'}</p>
                       </div>
                       
-                      <div className="mb-4">
+                      <div className="mb-4 transition-all hover:bg-neutral-50 p-2 rounded-lg">
                         <p className="text-sm text-neutral-500 mb-1">Location</p>
                         <p className="font-medium">{provider.address || provider.location}</p>
                       </div>
                       
-                      <div className="mb-4">
+                      <div className="mb-4 transition-all hover:bg-neutral-50 p-2 rounded-lg">
                         <p className="text-sm text-neutral-500 mb-1">Working Hours</p>
                         {provider.is24_7 ? (
                           <p className="font-medium text-secondary">Available 24/7</p>
@@ -276,7 +284,7 @@ export default function ProviderDetail({ providerId }: ProviderDetailProps) {
                         )}
                       </div>
                       
-                      <div>
+                      <div className="transition-all hover:bg-neutral-50 p-2 rounded-lg">
                         <p className="text-sm text-neutral-500 mb-1">Completed Services</p>
                         <p className="font-semibold">{provider.completedServices || provider.reviewCount}</p>
                       </div>
@@ -330,15 +338,15 @@ export default function ProviderDetail({ providerId }: ProviderDetailProps) {
             </TabsContent>
 
             {/* Reviews Tab Content */}
-            <TabsContent value="reviews">
+            <TabsContent value="reviews" className="fade-in">
               <div className="grid grid-cols-1 gap-6">
                 {provider.reviews && provider.reviews.map((review, index) => (
-                  <Card key={index}>
+                  <Card key={index} className="card-hover slide-in-right" style={{ animationDelay: `${index * 0.1}s` }}>
                     <CardContent className="pt-6">
-                      <div className="flex justify-between mb-2">
+                      <div className="flex justify-between mb-3">
                         <div className="flex items-center">
-                          <div className="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center mr-3">
-                            <span className="text-primary-700 font-medium">
+                          <div className="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center mr-3 transition-transform hover:scale-110">
+                            <span className="text-primary font-medium">
                               {review.author.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
                             </span>
                           </div>
@@ -347,78 +355,100 @@ export default function ProviderDetail({ providerId }: ProviderDetailProps) {
                             <p className="text-sm text-neutral-500">{review.date}</p>
                           </div>
                         </div>
-                        <div className="flex items-center">
+                        <div className="flex items-center bg-amber-50 px-3 py-1 rounded-full transition-all hover:bg-amber-100">
                           <span className="font-medium mr-1">{review.rating}</span>
                           <Star className="h-4 w-4 text-amber-500 fill-current" />
                         </div>
                       </div>
-                      <p className="text-neutral-700">{review.comment}</p>
+                      <div className="bg-neutral-50 p-4 rounded-lg border border-neutral-100 transition-all hover:border-neutral-200">
+                        <p className="text-neutral-700">{review.comment}</p>
+                      </div>
                     </CardContent>
                   </Card>
                 ))}
                 {(!provider.reviews || provider.reviews.length === 0) && (
-                  <div>
+                  <div className="text-center p-8 bg-neutral-50 rounded-lg border border-neutral-200 fade-in">
+                    <Star className="h-12 w-12 text-neutral-300 mx-auto mb-3" />
                     <p className="text-neutral-600">This provider doesn't have any reviews yet. Be the first to leave a review after using their services.</p>
+                    <Button className="mt-4 btn-transition hover-up">Leave a Review</Button>
                   </div>
                 )}
               </div>
             </TabsContent>
 
             {/* Availability Tab Content */}
-            <TabsContent value="availability">
+            <TabsContent value="availability" className="fade-in">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <h2 className="text-lg font-semibold mb-4">Working Hours</h2>
-                  {provider.is24_7 ? (
-                    <p className="text-secondary font-medium mb-4">This provider is available 24/7</p>
-                  ) : (
-                    <div className="space-y-2">
-                      <div className="flex justify-between">
-                        <span className="font-medium">Monday</span>
-                        <span>9:00 - 17:00</span>
-                      </div>
-                      <Separator />
-                      <div className="flex justify-between">
-                        <span className="font-medium">Tuesday</span>
-                        <span>9:00 - 17:00</span>
-                      </div>
-                      <Separator />
-                      <div className="flex justify-between">
-                        <span className="font-medium">Wednesday</span>
-                        <span>9:00 - 17:00</span>
-                      </div>
-                      <Separator />
-                      <div className="flex justify-between">
-                        <span className="font-medium">Thursday</span>
-                        <span>9:00 - 17:00</span>
-                      </div>
-                      <Separator />
-                      <div className="flex justify-between">
-                        <span className="font-medium">Friday</span>
-                        <span>9:00 - 17:00</span>
-                      </div>
-                      <Separator />
-                      <div className="flex justify-between">
-                        <span className="font-medium">Saturday</span>
-                        <span>10:00 - 14:00</span>
-                      </div>
-                      <Separator />
-                      <div className="flex justify-between">
-                        <span className="font-medium">Sunday</span>
-                        <span className="text-neutral-500">Closed</span>
-                      </div>
-                    </div>
-                  )}
+                <div className="slide-in-right">
+                  <Card className="card-hover">
+                    <CardContent className="pt-6">
+                      <h2 className="text-lg font-semibold mb-4 text-primary">Working Hours</h2>
+                      {provider.is24_7 ? (
+                        <div className="bg-secondary/10 p-4 rounded-lg border border-secondary/20 transition-all">
+                          <p className="text-secondary font-medium flex items-center">
+                            <span className="inline-block w-3 h-3 bg-secondary rounded-full mr-2 pulse"></span>
+                            This provider is available 24/7
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="space-y-2 rounded-lg border border-neutral-200 p-4">
+                          <div className="flex justify-between transition-colors hover:bg-neutral-50 p-2 rounded">
+                            <span className="font-medium">Monday</span>
+                            <span>9:00 - 17:00</span>
+                          </div>
+                          <Separator />
+                          <div className="flex justify-between transition-colors hover:bg-neutral-50 p-2 rounded">
+                            <span className="font-medium">Tuesday</span>
+                            <span>9:00 - 17:00</span>
+                          </div>
+                          <Separator />
+                          <div className="flex justify-between transition-colors hover:bg-neutral-50 p-2 rounded">
+                            <span className="font-medium">Wednesday</span>
+                            <span>9:00 - 17:00</span>
+                          </div>
+                          <Separator />
+                          <div className="flex justify-between transition-colors hover:bg-neutral-50 p-2 rounded">
+                            <span className="font-medium">Thursday</span>
+                            <span>9:00 - 17:00</span>
+                          </div>
+                          <Separator />
+                          <div className="flex justify-between transition-colors hover:bg-neutral-50 p-2 rounded">
+                            <span className="font-medium">Friday</span>
+                            <span>9:00 - 17:00</span>
+                          </div>
+                          <Separator />
+                          <div className="flex justify-between transition-colors hover:bg-neutral-50 p-2 rounded">
+                            <span className="font-medium">Saturday</span>
+                            <span>10:00 - 14:00</span>
+                          </div>
+                          <Separator />
+                          <div className="flex justify-between transition-colors hover:bg-neutral-50 p-2 rounded">
+                            <span className="font-medium">Sunday</span>
+                            <span className="text-neutral-500">Closed</span>
+                          </div>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
                 </div>
-                <div>
-                  <h2 className="text-lg font-semibold mb-4">Book an Appointment</h2>
-                  <Calendar
-                    mode="single"
-                    selected={bookingDate}
-                    onSelect={setBookingDate}
-                    className="rounded-md border"
-                  />
-                  <Button onClick={handleBookAppointment} className="w-full mt-4">Request Appointment</Button>
+                <div className="slide-in-right" style={{ animationDelay: '0.1s' }}>
+                  <Card className="card-hover">
+                    <CardContent className="pt-6">
+                      <h2 className="text-lg font-semibold mb-4 text-primary">Book an Appointment</h2>
+                      <div className="transition-all hover:border-primary/30 rounded-lg">
+                        <Calendar
+                          mode="single"
+                          selected={bookingDate}
+                          onSelect={setBookingDate}
+                          className="rounded-md border transition-all"
+                          initialFocus
+                        />
+                      </div>
+                      <Button onClick={handleBookAppointment} className="w-full mt-4 btn-transition hover-up">
+                        Request Appointment
+                      </Button>
+                    </CardContent>
+                  </Card>
                 </div>
               </div>
             </TabsContent>
