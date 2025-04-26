@@ -139,6 +139,78 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(400).json({ message: error instanceof Error ? error.message : "Invalid data" });
     }
   });
+  
+  // Update a service
+  app.patch("/api/services/:id", async (req, res) => {
+    if (!req.isAuthenticated() || req.user.role !== 'provider') {
+      return res.status(403).json({ message: "Only providers can update services" });
+    }
+    
+    try {
+      const serviceId = parseInt(req.params.id);
+      
+      // Check if service exists
+      const existingService = await storage.getServiceById(serviceId);
+      if (!existingService) {
+        return res.status(404).json({ message: "Service not found" });
+      }
+      
+      // Check if service belongs to the provider
+      const providerProfile = await storage.getProviderProfileByUserId(req.user.id);
+      if (!providerProfile || existingService.providerId !== providerProfile.id) {
+        return res.status(403).json({ message: "You don't have permission to update this service" });
+      }
+      
+      const updatedService = await storage.updateService(serviceId, req.body);
+      res.json(updatedService);
+    } catch (error) {
+      res.status(400).json({ message: error instanceof Error ? error.message : "Invalid data" });
+    }
+  });
+  
+  // Delete a service
+  app.delete("/api/services/:id", async (req, res) => {
+    if (!req.isAuthenticated() || req.user.role !== 'provider') {
+      return res.status(403).json({ message: "Only providers can delete services" });
+    }
+    
+    try {
+      const serviceId = parseInt(req.params.id);
+      
+      // Check if service exists
+      const existingService = await storage.getServiceById(serviceId);
+      if (!existingService) {
+        return res.status(404).json({ message: "Service not found" });
+      }
+      
+      // Check if service belongs to the provider
+      const providerProfile = await storage.getProviderProfileByUserId(req.user.id);
+      if (!providerProfile || existingService.providerId !== providerProfile.id) {
+        return res.status(403).json({ message: "You don't have permission to delete this service" });
+      }
+      
+      await storage.deleteService(serviceId);
+      res.status(204).send();
+    } catch (error) {
+      res.status(400).json({ message: error instanceof Error ? error.message : "Invalid data" });
+    }
+  });
+  
+  // Get a service by ID
+  app.get("/api/services/:id", async (req, res) => {
+    try {
+      const serviceId = parseInt(req.params.id);
+      const service = await storage.getServiceById(serviceId);
+      
+      if (!service) {
+        return res.status(404).json({ message: "Service not found" });
+      }
+      
+      res.json(service);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch service" });
+    }
+  });
 
   // Get services for a provider
   app.get("/api/providers/:id/services", async (req, res) => {

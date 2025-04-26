@@ -35,8 +35,14 @@ interface Provider {
   distance?: number;
 }
 
-// Mock components to be replaced with real implementations
-const HomeScreen = () => {
+// Import screens
+import ProviderDetailScreen from './src/screens/ProviderDetailScreen';
+import LocationSearchScreen from './src/screens/LocationSearchScreen';
+import BookingScreen from './src/screens/BookingScreen';
+import MessagesScreen from './src/screens/MessagesScreen';
+
+// HomeScreen component
+const HomeScreen = ({ navigation }: { navigation: any }) => {
   const [providers, setProviders] = useState<Provider[]>([]);
   const [loading, setLoading] = useState(true);
   
@@ -60,11 +66,11 @@ const HomeScreen = () => {
   const renderProviderItem = ({ item }: { item: Provider }) => (
     <TouchableOpacity 
       style={styles.providerCard}
-      onPress={() => console.log(`Navigate to provider ${item.id}`)}
+      onPress={() => navigation.navigate('ProviderDetail', { providerId: item.id })}
     >
       <View style={styles.providerHeader}>
         <Image 
-          source={{ uri: item.imageUrl.startsWith('http') ? item.imageUrl : 'https://via.placeholder.com/100' }} 
+          source={{ uri: item.imageUrl?.startsWith('http') ? item.imageUrl : 'https://via.placeholder.com/100' }} 
           style={styles.providerImage} 
         />
         <View style={styles.providerInfo}>
@@ -78,7 +84,7 @@ const HomeScreen = () => {
         </View>
       </View>
       <View style={styles.specializationsContainer}>
-        {item.specializations.slice(0, 3).map((spec, index) => (
+        {item.specializations?.slice(0, 3).map((spec, index) => (
           <View key={index} style={styles.specializationBadge}>
             <Text style={styles.specializationText}>{spec}</Text>
           </View>
@@ -109,7 +115,10 @@ const HomeScreen = () => {
           ListHeaderComponent={
             <View style={styles.header}>
               <Text style={styles.headerTitle}>Find Legal Services Near You</Text>
-              <TouchableOpacity style={styles.searchButton}>
+              <TouchableOpacity 
+                style={styles.searchButton}
+                onPress={() => navigation.navigate('LocationSearch')}
+              >
                 <Text style={styles.searchButtonText}>Search by location</Text>
                 <Ionicons name="search" size={18} color="#fff" />
               </TouchableOpacity>
@@ -121,33 +130,95 @@ const HomeScreen = () => {
   );
 };
 
-const SearchScreen = () => (
+// Search Screen
+const SearchScreen = ({ navigation }: { navigation: any }) => (
   <View style={styles.centerContainer}>
-    <Text>Search Screen</Text>
+    <Text style={styles.placeholderText}>Advanced Search</Text>
+    <TouchableOpacity 
+      style={styles.placeholderButton}
+      onPress={() => navigation.navigate('LocationSearch')}
+    >
+      <Text style={styles.placeholderButtonText}>Search by Location</Text>
+    </TouchableOpacity>
   </View>
 );
 
-const BookingsScreen = () => (
+// Bookings Screen
+const BookingsScreen = ({ navigation }: { navigation: any }) => (
   <View style={styles.centerContainer}>
-    <Text>Bookings Screen</Text>
+    <Text style={styles.placeholderText}>Your Bookings</Text>
+    <Text style={styles.placeholderSubtext}>You don't have any bookings yet</Text>
+    <TouchableOpacity 
+      style={styles.placeholderButton}
+      onPress={() => navigation.navigate('Home')}
+    >
+      <Text style={styles.placeholderButtonText}>Find a Provider</Text>
+    </TouchableOpacity>
   </View>
 );
 
-const MessagesScreen = () => (
-  <View style={styles.centerContainer}>
-    <Text>Messages Screen</Text>
-  </View>
-);
-
+// Profile Screen
 const ProfileScreen = () => (
   <View style={styles.centerContainer}>
-    <Text>Profile Screen</Text>
+    <Text style={styles.placeholderText}>Your Profile</Text>
+    <Text style={styles.placeholderSubtext}>Profile settings and account management</Text>
+    <View style={styles.profilePlaceholder}>
+      <Ionicons name="person-circle-outline" size={80} color="#0066cc" />
+      <Text style={styles.placeholderName}>John Doe</Text>
+      <Text style={styles.placeholderEmail}>john.doe@example.com</Text>
+    </View>
   </View>
 );
 
 // Create navigators
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
+
+// Home stack navigator
+const HomeStack = createStackNavigator();
+const HomeStackScreen = () => (
+  <HomeStack.Navigator screenOptions={{ headerShown: false }}>
+    <HomeStack.Screen name="HomeScreen" component={HomeScreen} />
+    <HomeStack.Screen name="ProviderDetail" component={ProviderDetailScreen} />
+    <HomeStack.Screen name="LocationSearch" component={LocationSearchScreen} />
+    <HomeStack.Screen name="Booking" component={BookingScreen} />
+  </HomeStack.Navigator>
+);
+
+// Search stack navigator
+const SearchStack = createStackNavigator();
+const SearchStackScreen = () => (
+  <SearchStack.Navigator screenOptions={{ headerShown: false }}>
+    <SearchStack.Screen name="SearchScreen" component={SearchScreen} />
+    <SearchStack.Screen name="LocationSearch" component={LocationSearchScreen} />
+    <SearchStack.Screen name="ProviderDetail" component={ProviderDetailScreen} />
+  </SearchStack.Navigator>
+);
+
+// Bookings stack navigator
+const BookingsStack = createStackNavigator();
+const BookingsStackScreen = () => (
+  <BookingsStack.Navigator screenOptions={{ headerShown: false }}>
+    <BookingsStack.Screen name="BookingsScreen" component={BookingsScreen} />
+    <BookingsStack.Screen name="Booking" component={BookingScreen} />
+  </BookingsStack.Navigator>
+);
+
+// Messages stack navigator
+const MessagesStack = createStackNavigator();
+const MessagesStackScreen = () => (
+  <MessagesStack.Navigator screenOptions={{ headerShown: false }}>
+    <MessagesStack.Screen name="MessagesScreen" component={MessagesScreen} />
+  </MessagesStack.Navigator>
+);
+
+// Profile stack navigator
+const ProfileStack = createStackNavigator();
+const ProfileStackScreen = () => (
+  <ProfileStack.Navigator screenOptions={{ headerShown: false }}>
+    <ProfileStack.Screen name="ProfileScreen" component={ProfileScreen} />
+  </ProfileStack.Navigator>
+);
 
 // Main App component
 export default function App() {
@@ -156,6 +227,7 @@ export default function App() {
       <StatusBar barStyle="dark-content" />
       <Tab.Navigator
         screenOptions={({ route }) => ({
+          headerShown: false, // Hide all tab screen headers
           tabBarIcon: ({ focused, color, size }) => {
             let iconName: any;
 
@@ -177,11 +249,11 @@ export default function App() {
           tabBarInactiveTintColor: 'gray',
         })}
       >
-        <Tab.Screen name="Home" component={HomeScreen} />
-        <Tab.Screen name="Search" component={SearchScreen} />
-        <Tab.Screen name="Bookings" component={BookingsScreen} />
-        <Tab.Screen name="Messages" component={MessagesScreen} />
-        <Tab.Screen name="Profile" component={ProfileScreen} />
+        <Tab.Screen name="Home" component={HomeStackScreen} />
+        <Tab.Screen name="Search" component={SearchStackScreen} />
+        <Tab.Screen name="Bookings" component={BookingsStackScreen} />
+        <Tab.Screen name="Messages" component={MessagesStackScreen} />
+        <Tab.Screen name="Profile" component={ProfileStackScreen} />
       </Tab.Navigator>
     </NavigationContainer>
   );
@@ -297,5 +369,44 @@ const styles = StyleSheet.create({
   },
   distance: {
     color: '#666',
+  },
+  placeholderText: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 12,
+    color: '#333',
+  },
+  placeholderSubtext: {
+    fontSize: 16,
+    color: '#666',
+    marginBottom: 24,
+    textAlign: 'center',
+    paddingHorizontal: 40,
+  },
+  placeholderButton: {
+    backgroundColor: '#0066cc',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+    marginTop: 16,
+  },
+  placeholderButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  profilePlaceholder: {
+    alignItems: 'center',
+    marginTop: 32,
+  },
+  placeholderName: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginTop: 16,
+    marginBottom: 4,
+  },
+  placeholderEmail: {
+    color: '#666',
+    fontSize: 16,
   },
 });
