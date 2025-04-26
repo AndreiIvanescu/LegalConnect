@@ -26,7 +26,7 @@ import {
   SheetTrigger,
 } from '@/components/ui/sheet';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Shield, Menu, LogIn, LogOut, User, Mail, Calendar, Settings } from 'lucide-react';
+import { Shield, Menu, LogIn, LogOut, User, Mail, Calendar, Settings, Briefcase, ListFilter } from 'lucide-react';
 
 function AuthAwareHeader() {
   const { user, logoutMutation } = useAuth();
@@ -86,6 +86,28 @@ function AuthAwareHeader() {
                         Messages
                       </NavigationMenuLink>
                     </NavigationMenuItem>
+                    
+                    {user.role === 'client' && (
+                      <NavigationMenuItem>
+                        <NavigationMenuLink 
+                          className={navigationMenuTriggerStyle()}
+                          onClick={() => navigate('/jobs')}
+                        >
+                          My Job Postings
+                        </NavigationMenuLink>
+                      </NavigationMenuItem>
+                    )}
+                    
+                    {user.role === 'provider' && (
+                      <NavigationMenuItem>
+                        <NavigationMenuLink 
+                          className={navigationMenuTriggerStyle()}
+                          onClick={() => navigate('/job-board')}
+                        >
+                          Job Board
+                        </NavigationMenuLink>
+                      </NavigationMenuItem>
+                    )}
                   </>
                 )}
               </NavigationMenuList>
@@ -137,15 +159,42 @@ function AuthAwareHeader() {
                         </Button>
                       </SheetClose>
                       {user.role === 'provider' && (
+                        <>
+                          <SheetClose asChild>
+                            <Button 
+                              variant="ghost" 
+                              className="justify-start w-full" 
+                              size="sm"
+                              onClick={() => navigate('/provider/dashboard')}
+                            >
+                              <Shield className="mr-2 h-4 w-4" />
+                              Provider Dashboard
+                            </Button>
+                          </SheetClose>
+                          <SheetClose asChild>
+                            <Button 
+                              variant="ghost" 
+                              className="justify-start w-full" 
+                              size="sm"
+                              onClick={() => navigate('/job-board')}
+                            >
+                              <ListFilter className="mr-2 h-4 w-4" />
+                              Job Board
+                            </Button>
+                          </SheetClose>
+                        </>
+                      )}
+                      
+                      {user.role === 'client' && (
                         <SheetClose asChild>
                           <Button 
                             variant="ghost" 
                             className="justify-start w-full" 
                             size="sm"
-                            onClick={() => navigate('/provider/dashboard')}
+                            onClick={() => navigate('/jobs')}
                           >
-                            <Shield className="mr-2 h-4 w-4" />
-                            Provider Dashboard
+                            <Briefcase className="mr-2 h-4 w-4" />
+                            My Job Postings
                           </Button>
                         </SheetClose>
                       )}
@@ -190,9 +239,22 @@ function AuthAwareHeader() {
                     </div>
                     <DropdownMenuSeparator />
                     {user.role === 'provider' && (
-                      <DropdownMenuItem onClick={() => navigate('/provider/dashboard')}>
-                        <Shield className="mr-2 h-4 w-4" />
-                        <span>Provider Dashboard</span>
+                      <>
+                        <DropdownMenuItem onClick={() => navigate('/provider/dashboard')}>
+                          <Shield className="mr-2 h-4 w-4" />
+                          <span>Provider Dashboard</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => navigate('/job-board')}>
+                          <ListFilter className="mr-2 h-4 w-4" />
+                          <span>Job Board</span>
+                        </DropdownMenuItem>
+                      </>
+                    )}
+                    
+                    {user.role === 'client' && (
+                      <DropdownMenuItem onClick={() => navigate('/jobs')}>
+                        <Briefcase className="mr-2 h-4 w-4" />
+                        <span>My Job Postings</span>
                       </DropdownMenuItem>
                     )}
                     <DropdownMenuItem onClick={() => navigate('/profile')}>

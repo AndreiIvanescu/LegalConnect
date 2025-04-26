@@ -10,6 +10,8 @@ import MessagesPage from "@/pages/messages-page";
 import ProfilePage from "@/pages/profile-page";
 import ProfileSetupPage from "@/pages/profile-setup-page";
 import ProviderDashboard from "@/pages/provider-dashboard";
+import JobPostingPage from "@/pages/job-posting-page";
+import JobBoardPage from "@/pages/job-board-page";
 import { ProtectedRoute } from "./lib/protected-route";
 import AuthAwareHeader from "@/components/layout/auth-aware-header";
 import { useAuth } from "@/hooks/use-auth";
@@ -27,6 +29,8 @@ function Router() {
       <ProtectedRoute path="/profile" component={ProfilePage} />
       <ProtectedRoute path="/profile/setup" component={ProfileSetupPage} />
       <ProtectedRoute path="/provider/dashboard" component={ProviderDashboard} />
+      <ProtectedRoute path="/jobs" component={JobPostingPage} />
+      <ProtectedRoute path="/job-board" component={JobBoardPage} />
       <Route component={NotFound} />
     </Switch>
   );
