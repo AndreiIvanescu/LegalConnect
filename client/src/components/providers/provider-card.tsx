@@ -22,23 +22,35 @@ interface ProviderCardProps {
 }
 
 export default function ProviderCard({ provider }: ProviderCardProps) {
-  // Log the provider data for debugging
-  console.log("Provider data:", provider);
-  console.log("Image URL:", provider.imageUrl);
+  // Check if image URL has a valid path (contains http:// or https:// or starts with /)
+  const hasValidImageUrl = provider.imageUrl && 
+    (provider.imageUrl.startsWith('http://') || 
+     provider.imageUrl.startsWith('https://') || 
+     provider.imageUrl.startsWith('/'));
   
-  // Use a local placeholder image path
-  const placeholderImageUrl = "/assets/placeholder-profile.jpg";
+  // For filenames without paths, prepend the uploads path
+  let imageUrl = provider.imageUrl;
+  if (provider.imageUrl && !hasValidImageUrl) {
+    // This is just a filename without a path, add the /uploads/ prefix
+    imageUrl = `/uploads/${provider.imageUrl}`;
+  }
+  
+  console.log("Original image URL:", provider.imageUrl);
+  console.log("Processed image URL:", imageUrl);
   
   return (
     <Card className="bg-white rounded-xl shadow-sm border border-neutral-200 overflow-hidden hover:shadow-md transition-shadow">
       <div className="relative">
-        {provider.imageUrl && provider.imageUrl !== '/placeholder-avatar.jpg' ? (
+        {imageUrl && 
+         imageUrl !== '/placeholder-avatar.jpg' && 
+         imageUrl !== 'undefined' && 
+         imageUrl !== 'null' ? (
           <img 
-            src={provider.imageUrl} 
+            src={imageUrl} 
             alt={`${provider.name} portrait`} 
             className="w-full h-48 object-cover"
             onError={(e) => {
-              // If image fails to load, replace with a placeholder
+              console.log("Image failed to load:", imageUrl);
               e.currentTarget.src = "https://placehold.co/400x200/e0e0e0/6c757d?text=Provider";
             }}
           />
