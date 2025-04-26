@@ -168,7 +168,9 @@ export default function ProfileSetupPage() {
       setImagePreview(imageUrl);
       
       // Update the form value - prefix with '/uploads/' to ensure correct path
-      form.setValue('imageUrl', `/uploads/${file.name}`);
+      const sanitizedFilename = file.name.replace(/\s+/g, '_').replace(/[()]/g, '');
+      console.log("Sanitized filename:", sanitizedFilename);
+      form.setValue('imageUrl', `/uploads/${sanitizedFilename}`);
     }
   };
   
@@ -177,7 +179,7 @@ export default function ProfileSetupPage() {
     fileInputRef.current?.click();
   };
 
-  function onSubmit(data: z.infer<typeof providerProfileFormSchema>) {
+  async function onSubmit(data: z.infer<typeof providerProfileFormSchema>) {
     // If location is provided but coordinates are missing, use geocoding here
     // For now, we'll use default coordinates for demonstration
     if (!data.latitude || !data.longitude) {
@@ -192,17 +194,40 @@ export default function ProfileSetupPage() {
       languages: data.languages.split(',').map(lang => lang.trim())
     };
     
-    // If we have a file selected, ensure we're using the correct path format
+    // If we have a file selected, upload it first
     if (selectedFile) {
-      // In a real app, you would upload the file to a server first
-      // and then use the returned URL
+      // Create a FormData object to send the file
+      const formData = new FormData();
+      formData.append('image', selectedFile);
       
-      // Make sure image URL has the correct format with /uploads prefix
-      formattedData.imageUrl = formattedData.imageUrl.startsWith('/uploads/') 
-        ? formattedData.imageUrl 
-        : `/uploads/${selectedFile.name}`;
-
-      console.log("Saving image URL:", formattedData.imageUrl);
+      try {
+        // Upload the file to our API
+        const response = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData,
+          // Don't set Content-Type header, let browser set it with boundary
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to upload image');
+        }
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          // Use the path returned from the server
+          formattedData.imageUrl = result.filePath;
+          console.log("Saving image URL from server:", formattedData.imageUrl);
+        }
+      } catch (error) {
+        console.error("Error uploading image:", error);
+        toast({
+          title: "Upload Error",
+          description: "Failed to upload profile image. Please try again.",
+          variant: "destructive",
+        });
+        return; // Stop form submission if image upload failed
+      }
     }
     
     mutation.mutate(formattedData);

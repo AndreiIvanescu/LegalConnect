@@ -1,4 +1,4 @@
-import type { Express } from "express";
+import type { Express, Request } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth } from "./auth";
@@ -6,6 +6,29 @@ import { z } from "zod";
 import { WebSocketServer } from 'ws';
 import { setupWebSocketServer } from './websocket';
 import { insertProviderProfileSchema, insertServiceSchema, insertBookingSchema, insertReviewSchema, insertMessageSchema } from "@shared/schema";
+import multer from 'multer';
+import path from 'path';
+import fs from 'fs';
+
+// Set up multer for file uploads
+const uploadDir = path.join(process.cwd(), 'public', 'uploads');
+// Ensure uploads directory exists
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
+
+const storage_config = multer.diskStorage({
+  destination: (req: Express.Request, file: Express.Multer.File, cb: (error: Error | null, destination: string) => void) => {
+    cb(null, uploadDir);
+  },
+  filename: (req: Express.Request, file: Express.Multer.File, cb: (error: Error | null, filename: string) => void) => {
+    // Sanitize filename to prevent issues with special characters and spaces
+    const filename = file.originalname.replace(/\s+/g, '_').replace(/[()]/g, '');
+    cb(null, filename);
+  }
+});
+
+const upload = multer({ storage: storage_config });
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication routes
@@ -461,6 +484,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(messages);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch messages" });
+    }
+  });
+
+  // File upload endpoint
+  app.post('/api/upload', upload.single('image'), (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Authentication required" });
+    }
+
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: "No file uploaded" });
+      }
+
+      // Sanitize filename as we did in the storage configuration
+      const filename = req.file.originalname.replace(/\s+/g, '_').replace(/[()]/g, '');
+      const filePath = `/uploads/${filename}`;
+      
+      console.log(`File uploaded successfully: ${filePath}`);
+      
+      // Return the path to the uploaded file
+      res.json({ 
+        success: true, 
+        filePath: filePath 
+      });
+    } catch (error) {
+      console.error("Error uploading file:", error);
+      res.status(500).json({ message: "Failed to upload file" });
     }
   });
 
