@@ -64,7 +64,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Create provider profile
-  app.post("/api/providers/profile", async (req, res) => {
+  app.post("/api/profile/provider", async (req, res) => {
     if (!req.isAuthenticated() || req.user.role !== 'provider') {
       return res.status(403).json({ message: "Only providers can create profiles" });
     }
@@ -83,7 +83,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Update provider profile
-  app.patch("/api/providers/profile", async (req, res) => {
+  app.patch("/api/profile/provider", async (req, res) => {
     if (!req.isAuthenticated() || req.user.role !== 'provider') {
       return res.status(403).json({ message: "Only providers can update profiles" });
     }
@@ -212,8 +212,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get services for a provider
+  // Get services for a provider by provider ID
   app.get("/api/providers/:id/services", async (req, res) => {
+    try {
+      const providerId = parseInt(req.params.id);
+      const services = await storage.getServicesByProviderId(providerId);
+      res.json(services);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch services" });
+    }
+  });
+  
+  // Get services for a provider by provider profile ID (for dashboard)
+  app.get("/api/services/provider/:id", async (req, res) => {
     try {
       const providerId = parseInt(req.params.id);
       const services = await storage.getServicesByProviderId(providerId);

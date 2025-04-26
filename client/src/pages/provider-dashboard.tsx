@@ -1,11 +1,22 @@
 import React, { useState } from 'react';
+import { useLocation } from 'wouter';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/use-auth';
-import { useQuery } from '@tanstack/react-query';
-import { Redirect, Link } from 'wouter';
 import { apiRequest } from '@/lib/queryClient';
-import ServiceManagement from '@/components/providers/service-management';
+import { useToast } from '@/hooks/use-toast';
+import { z } from 'zod';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { insertServiceSchema } from '@shared/schema';
 
-// UI Components
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import {
   Tabs,
   TabsContent,
@@ -13,348 +24,878 @@ import {
   TabsTrigger,
 } from '@/components/ui/tabs';
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
 import { 
-  Loader2, 
-  UserCog, 
-  Map, 
+  ShieldCheck, 
+  FileText, 
+  Award, 
+  Clock, 
   Settings, 
-  ListChecks, 
-  Star,
-  Clock,
-  CalendarRange,
-  MessageSquare,
-  AlertTriangle
+  Calendar, 
+  Plus, 
+  Edit, 
+  Trash2,
+  CreditCard,
+  CheckCircle2,
+  AlarmClock,
+  XCircle
 } from 'lucide-react';
 
-// Provider dashboard page
-const ProviderDashboard: React.FC = () => {
-  const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState('overview');
+// Service form schema with additional validations
+const serviceSchema = insertServiceSchema.extend({
+  title: z.string().min(5, {
+    message: "Title must be at least 5 characters",
+  }),
+  description: z.string().min(10, {
+    message: "Description must be at least 10 characters",
+  }),
+  priceType: z.enum(['fixed', 'percentage']),
+});
 
-  // Check if user has a provider profile
-  const { data: profile, isLoading: isLoadingProfile } = useQuery({
+export default function ProviderDashboard() {
+  const [, navigate] = useLocation();
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [isAddServiceDialogOpen, setIsAddServiceDialogOpen] = useState(false);
+  const [serviceToEdit, setServiceToEdit] = useState<any>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [serviceToDelete, setServiceToDelete] = useState<number | null>(null);
+
+  // Fetch provider profile
+  const { data: profile, isLoading: profileLoading } = useQuery({
     queryKey: ['/api/profile/provider'],
     queryFn: async () => {
-      try {
-        const res = await apiRequest('GET', '/api/profile/provider');
-        if (res.status === 404) {
-          return null;
-        }
-        return await res.json();
-      } catch (error) {
-        return null;
+      const res = await apiRequest('GET', '/api/profile/provider');
+      if (!res.ok) {
+        throw new Error('Failed to fetch provider profile');
       }
+      return res.json();
     },
-    enabled: user?.role === 'provider',
   });
 
-  // Get bookings
-  const { data: bookings = [], isLoading: isLoadingBookings } = useQuery({
-    queryKey: ['/api/bookings'],
+  // Fetch services
+  const { data: services = [], isLoading: servicesLoading } = useQuery({
+    queryKey: ['/api/services', profile?.id],
     queryFn: async () => {
-      try {
-        const res = await apiRequest('GET', '/api/bookings');
-        return await res.json();
-      } catch (error) {
-        return [];
+      if (!profile?.id) return [];
+      const res = await apiRequest('GET', `/api/services/provider/${profile.id}`);
+      if (!res.ok) {
+        throw new Error('Failed to fetch services');
       }
+      return res.json();
     },
-    enabled: !!profile,
+    enabled: !!profile?.id,
   });
 
-  // If user is not authenticated, redirect to auth page
-  if (!user) {
-    return <Redirect to="/auth" />;
-  }
+  // Fetch bookings
+  const { data: bookings = [], isLoading: bookingsLoading } = useQuery({
+    queryKey: ['/api/bookings/provider'],
+    queryFn: async () => {
+      const res = await apiRequest('GET', '/api/bookings/provider');
+      if (!res.ok) {
+        throw new Error('Failed to fetch bookings');
+      }
+      return res.json();
+    },
+  });
 
-  // If user is not a provider, redirect to home page
-  if (user.role !== 'provider') {
-    return <Redirect to="/" />;
-  }
+  // Forms
+  const serviceForm = useForm<z.infer<typeof serviceSchema>>({
+    resolver: zodResolver(serviceSchema),
+    defaultValues: {
+      providerId: profile?.id,
+      title: '',
+      description: '',
+      priceType: 'fixed',
+      price: 0,
+      percentageRate: 0,
+      minPrice: 0,
+    },
+  });
 
-  // Loading state
-  if (isLoadingProfile) {
+  // Reset form when dialog closes
+  React.useEffect(() => {
+    if (!isAddServiceDialogOpen) {
+      if (!serviceToEdit) {
+        serviceForm.reset({
+          providerId: profile?.id,
+          title: '',
+          description: '',
+          priceType: 'fixed',
+          price: 0,
+          percentageRate: 0,
+          minPrice: 0,
+        });
+      }
+    }
+  }, [isAddServiceDialogOpen, serviceForm, profile?.id, serviceToEdit]);
+
+  // Set form values when editing a service
+  React.useEffect(() => {
+    if (serviceToEdit) {
+      serviceForm.reset({
+        providerId: profile?.id,
+        title: serviceToEdit.title,
+        description: serviceToEdit.description,
+        priceType: serviceToEdit.priceType,
+        price: serviceToEdit.price || 0,
+        percentageRate: serviceToEdit.percentageRate || 0,
+        minPrice: serviceToEdit.minPrice || 0,
+      });
+      setIsAddServiceDialogOpen(true);
+    }
+  }, [serviceToEdit, serviceForm, profile?.id]);
+
+  // Mutations
+  const createServiceMutation = useMutation({
+    mutationFn: async (data: z.infer<typeof serviceSchema>) => {
+      const res = await apiRequest('POST', '/api/services', data);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/services', profile?.id] });
+      setIsAddServiceDialogOpen(false);
+      toast({
+        title: "Service created",
+        description: "Your service has been created successfully",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Failed to create service",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const updateServiceMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: number; data: z.infer<typeof serviceSchema> }) => {
+      const res = await apiRequest('PATCH', `/api/services/${id}`, data);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/services', profile?.id] });
+      setIsAddServiceDialogOpen(false);
+      setServiceToEdit(null);
+      toast({
+        title: "Service updated",
+        description: "Your service has been updated successfully",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Failed to update service",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteServiceMutation = useMutation({
+    mutationFn: async (id: number) => {
+      await apiRequest('DELETE', `/api/services/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/services', profile?.id] });
+      setIsDeleteDialogOpen(false);
+      setServiceToDelete(null);
+      toast({
+        title: "Service deleted",
+        description: "Your service has been deleted successfully",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Failed to delete service",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Handlers
+  const handleAddService = (data: z.infer<typeof serviceSchema>) => {
+    data.providerId = profile?.id;
+    
+    // Convert string values to numbers
+    if (data.priceType === 'fixed') {
+      data.price = Number(data.price);
+      data.percentageRate = 0;
+      data.minPrice = 0;
+    } else {
+      data.percentageRate = Number(data.percentageRate);
+      data.minPrice = Number(data.minPrice);
+      data.price = 0;
+    }
+
+    if (serviceToEdit) {
+      updateServiceMutation.mutate({ id: serviceToEdit.id, data });
+    } else {
+      createServiceMutation.mutate(data);
+    }
+  };
+
+  const handleEditService = (service: any) => {
+    setServiceToEdit(service);
+  };
+
+  const handleDeleteService = (id: number) => {
+    setServiceToDelete(id);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const confirmDeleteService = () => {
+    if (serviceToDelete) {
+      deleteServiceMutation.mutate(serviceToDelete);
+    }
+  };
+
+  const formatPrice = (service: any) => {
+    if (service.priceType === 'fixed') {
+      return `${service.price / 100} RON`;
+    } else {
+      return `${service.percentageRate}% (min. ${service.minPrice / 100} RON)`;
+    }
+  };
+
+  const formatBookingStatus = (status: string) => {
+    switch (status) {
+      case 'pending':
+        return <Badge variant="outline" className="bg-yellow-100 text-yellow-800">Pending</Badge>;
+      case 'confirmed':
+        return <Badge variant="outline" className="bg-blue-100 text-blue-800">Confirmed</Badge>;
+      case 'completed':
+        return <Badge variant="outline" className="bg-green-100 text-green-800">Completed</Badge>;
+      case 'cancelled':
+        return <Badge variant="outline" className="bg-red-100 text-red-800">Cancelled</Badge>;
+      default:
+        return <Badge variant="outline">{status}</Badge>;
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return new Intl.DateTimeFormat('en-GB', { 
+      day: '2-digit', 
+      month: 'short', 
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    }).format(date);
+  };
+
+  if (profileLoading) {
     return (
-      <div className="container mx-auto py-10 px-4 flex justify-center items-center min-h-[60vh]">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="container py-8 flex items-center justify-center">
+        <div className="flex flex-col items-center gap-2">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+          <p className="text-sm text-muted-foreground">Loading your profile...</p>
+        </div>
       </div>
     );
   }
 
-  // If provider profile doesn't exist, redirect to profile setup
   if (!profile) {
     return (
-      <div className="container mx-auto py-10 px-4 max-w-4xl">
+      <div className="container py-8">
         <Card>
           <CardHeader>
-            <CardTitle>Complete Your Provider Profile</CardTitle>
+            <CardTitle>Profile Not Found</CardTitle>
             <CardDescription>
-              You need to set up your provider profile before you can start offering services
+              You need to complete your provider profile setup first.
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center p-4 bg-muted/50 rounded-lg">
-              <AlertTriangle className="h-6 w-6 text-amber-500 mr-3" />
-              <div>
-                <h3 className="font-medium">Profile Setup Required</h3>
-                <p className="text-sm text-muted-foreground">
-                  Your provider profile needs to be completed before you can manage services and bookings
-                </p>
-              </div>
-            </div>
-            <Button asChild className="w-full sm:w-auto">
-              <Link href="/profile/setup">
-                <UserCog className="mr-2 h-4 w-4" />
-                Complete Profile Setup
-              </Link>
+          <CardFooter>
+            <Button onClick={() => navigate('/profile/setup')}>
+              Set Up Provider Profile
             </Button>
-          </CardContent>
+          </CardFooter>
         </Card>
       </div>
     );
   }
 
-  // Count pending bookings
-  const pendingBookings = bookings.filter((booking: any) => booking.status === 'pending').length;
-
   return (
-    <div className="container mx-auto py-10 px-4">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Provider Dashboard</h1>
+    <div className="container py-8">
+      <div className="flex flex-col gap-8">
+        <div className="flex flex-col gap-2">
+          <h1 className="text-3xl font-bold">Provider Dashboard</h1>
           <p className="text-muted-foreground">
-            Manage your services, bookings, and profile
+            Manage your services, bookings, and profile settings
           </p>
         </div>
-        <div className="mt-4 md:mt-0 space-x-3">
-          <Button asChild variant="outline">
-            <Link href="/profile/setup">
-              <UserCog className="mr-2 h-4 w-4" />
-              Edit Profile
-            </Link>
-          </Button>
-          <Button asChild>
-            <Link href="/">
-              <Map className="mr-2 h-4 w-4" />
-              View Public Profile
-            </Link>
-          </Button>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <ShieldCheck className="h-5 w-5 text-primary" />
+                Profile Status
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Provider Type</span>
+                  <Badge variant="outline" className="capitalize">{profile.providerType}</Badge>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Completed Services</span>
+                  <span className="font-medium">{profile.completedServices || 0}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Experience</span>
+                  <span className="font-medium">{profile.yearsOfExperience} years</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Award className="h-5 w-5 text-primary" />
+                Provider Rating
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Total Ratings</span>
+                  <span className="font-medium">-</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Average Rating</span>
+                  <span className="font-medium">-</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Top Rated Status</span>
+                  <Badge variant={profile.isTopRated ? "default" : "outline"}>
+                    {profile.isTopRated ? "Yes" : "Not Yet"}
+                  </Badge>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Clock className="h-5 w-5 text-primary" />
+                Availability
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Working Hours</span>
+                  <span className="font-medium">{profile.workingHours || "Not set"}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">24/7 Availability</span>
+                  <Badge variant={profile.is24_7 ? "default" : "outline"}>
+                    {profile.is24_7 ? "Yes" : "No"}
+                  </Badge>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Service Radius</span>
+                  <span className="font-medium">{profile.serviceRadius / 1000} km</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
+
+        <Tabs defaultValue="services" className="w-full">
+          <TabsList className="grid w-full md:w-auto grid-cols-3 md:grid-cols-none md:flex">
+            <TabsTrigger value="services" className="flex items-center gap-2">
+              <FileText className="h-4 w-4" />
+              <span className="hidden md:inline">Services</span>
+            </TabsTrigger>
+            <TabsTrigger value="bookings" className="flex items-center gap-2">
+              <Calendar className="h-4 w-4" />
+              <span className="hidden md:inline">Bookings</span>
+            </TabsTrigger>
+            <TabsTrigger value="settings" className="flex items-center gap-2">
+              <Settings className="h-4 w-4" />
+              <span className="hidden md:inline">Settings</span>
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="services" className="mt-6">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle>Your Services</CardTitle>
+                  <CardDescription>
+                    Manage the services you offer to clients
+                  </CardDescription>
+                </div>
+                <Button 
+                  size="sm" 
+                  onClick={() => {
+                    setServiceToEdit(null);
+                    setIsAddServiceDialogOpen(true);
+                  }}
+                  className="flex items-center gap-1"
+                >
+                  <Plus className="h-4 w-4" />
+                  Add Service
+                </Button>
+              </CardHeader>
+              <CardContent>
+                {servicesLoading ? (
+                  <div className="flex justify-center py-8">
+                    <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+                  </div>
+                ) : services.length === 0 ? (
+                  <div className="text-center py-8">
+                    <p className="text-muted-foreground">You haven't added any services yet.</p>
+                    <Button 
+                      variant="outline" 
+                      onClick={() => setIsAddServiceDialogOpen(true)}
+                      className="mt-4"
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Your First Service
+                    </Button>
+                  </div>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Title</TableHead>
+                        <TableHead>Type</TableHead>
+                        <TableHead>Price</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {services.map((service: any) => (
+                        <TableRow key={service.id}>
+                          <TableCell className="font-medium">{service.title}</TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className="capitalize">
+                              {service.priceType === 'fixed' ? 'Fixed Price' : 'Percentage Rate'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>{formatPrice(service)}</TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex justify-end gap-2">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleEditService(service)}
+                              >
+                                <Edit className="h-4 w-4" />
+                                <span className="sr-only">Edit</span>
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleDeleteService(service.id)}
+                              >
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                                <span className="sr-only">Delete</span>
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="bookings" className="mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Your Bookings</CardTitle>
+                <CardDescription>
+                  Manage your appointments and bookings
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {bookingsLoading ? (
+                  <div className="flex justify-center py-8">
+                    <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+                  </div>
+                ) : bookings.length === 0 ? (
+                  <div className="text-center py-8">
+                    <p className="text-muted-foreground">You don't have any bookings yet.</p>
+                  </div>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Client</TableHead>
+                        <TableHead>Service</TableHead>
+                        <TableHead>Date & Time</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {bookings.map((booking: any) => (
+                        <TableRow key={booking.id}>
+                          <TableCell className="font-medium">{booking.clientName}</TableCell>
+                          <TableCell>{booking.serviceName}</TableCell>
+                          <TableCell>{formatDate(booking.appointmentTime)}</TableCell>
+                          <TableCell>{formatBookingStatus(booking.status)}</TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex justify-end gap-2">
+                              <Button variant="outline" size="sm" className="h-8 gap-1">
+                                <CheckCircle2 className="h-3.5 w-3.5" />
+                                <span className="text-xs">Confirm</span>
+                              </Button>
+                              <Button variant="outline" size="sm" className="h-8 gap-1">
+                                <AlarmClock className="h-3.5 w-3.5" />
+                                <span className="text-xs">Reschedule</span>
+                              </Button>
+                              <Button variant="outline" size="sm" className="h-8 gap-1" disabled={booking.status === 'cancelled'}>
+                                <XCircle className="h-3.5 w-3.5 text-destructive" />
+                                <span className="text-xs text-destructive">Cancel</span>
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="settings" className="mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Profile Settings</CardTitle>
+                <CardDescription>
+                  Update your provider profile information
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-6">
+                  <div>
+                    <h3 className="text-lg font-medium">Basic Information</h3>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Edit your personal and professional details
+                    </p>
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <div>
+                        <label className="text-sm font-medium">Provider Type</label>
+                        <p className="capitalize">{profile.providerType}</p>
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium">Years of Experience</label>
+                        <p>{profile.yearsOfExperience}</p>
+                      </div>
+                      <div className="md:col-span-2">
+                        <label className="text-sm font-medium">Description</label>
+                        <p className="text-sm">{profile.description}</p>
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium">Education</label>
+                        <p>{profile.education}</p>
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium">Languages</label>
+                        <p>{profile.languages}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <Separator />
+                  
+                  <div>
+                    <h3 className="text-lg font-medium">Location Information</h3>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Update your office location and service area
+                    </p>
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <div>
+                        <label className="text-sm font-medium">Office Location</label>
+                        <p>{profile.location}</p>
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium">Service Radius</label>
+                        <p>{profile.serviceRadius / 1000} km</p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <Separator />
+                  
+                  <div>
+                    <h3 className="text-lg font-medium">Availability Settings</h3>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Configure your working hours and availability
+                    </p>
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <div>
+                        <label className="text-sm font-medium">Working Hours</label>
+                        <p>{profile.workingHours || "Not set"}</p>
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium">Available 24/7</label>
+                        <p>{profile.is24_7 ? "Yes" : "No"}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+              <CardFooter>
+                <Button onClick={() => navigate('/profile/edit')}>
+                  Edit Profile
+                </Button>
+              </CardFooter>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid grid-cols-2 md:grid-cols-4 lg:w-[600px]">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="services">Services</TabsTrigger>
-          <TabsTrigger value="bookings">Bookings</TabsTrigger>
-          <TabsTrigger value="messages">Messages</TabsTrigger>
-        </TabsList>
+      {/* Add/Edit Service Dialog */}
+      <Dialog open={isAddServiceDialogOpen} onOpenChange={setIsAddServiceDialogOpen}>
+        <DialogContent className="sm:max-w-[550px]">
+          <DialogHeader>
+            <DialogTitle>{serviceToEdit ? "Edit Service" : "Add New Service"}</DialogTitle>
+            <DialogDescription>
+              {serviceToEdit 
+                ? "Update the details of your existing service"
+                : "Add a new service that you can offer to clients"
+              }
+            </DialogDescription>
+          </DialogHeader>
+          <Form {...serviceForm}>
+            <form onSubmit={serviceForm.handleSubmit(handleAddService)} className="space-y-6">
+              <FormField
+                control={serviceForm.control}
+                name="title"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Service Title</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g., Document Notarization" {...field} />
+                    </FormControl>
+                    <FormDescription>
+                      A clear, descriptive title for your service
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-        {/* Overview Tab */}
-        <TabsContent value="overview" className="space-y-6">
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            {/* Stats cards */}
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">
-                  Pending Bookings
-                </CardTitle>
-                <CalendarRange className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {isLoadingBookings ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    pendingBookings
+              <FormField
+                control={serviceForm.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Description</FormLabel>
+                    <FormControl>
+                      <Textarea 
+                        placeholder="Describe what this service includes..." 
+                        className="min-h-[100px]"
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      Detailed explanation of what clients can expect
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={serviceForm.control}
+                name="priceType"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Pricing Type</FormLabel>
+                    <Select 
+                      onValueChange={field.onChange} 
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select price type" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="fixed">Fixed Price</SelectItem>
+                        <SelectItem value="percentage">Percentage Rate</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormDescription>
+                      Choose how you want to charge for this service
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {serviceForm.watch('priceType') === 'fixed' ? (
+                <FormField
+                  control={serviceForm.control}
+                  name="price"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="flex items-center gap-1">
+                        <CreditCard className="h-4 w-4" />
+                        Fixed Price (in RON cents)
+                      </FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="number" 
+                          min="0"
+                          placeholder="e.g., 15000 for 150 RON"
+                          {...field}
+                          onChange={(e) => field.onChange(Number(e.target.value))}
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        Enter price in RON cents (e.g., 15000 for 150 RON)
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
                   )}
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  {pendingBookings === 1 ? 'Requires attention' : pendingBookings > 1 ? 'Require attention' : 'No pending bookings'}
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">
-                  Completed Services
-                </CardTitle>
-                <ListChecks className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{profile.completedServices || 0}</div>
-                <p className="text-xs text-muted-foreground">
-                  {profile.completedServices > 0 ? 'Total completed services' : 'No completed services yet'}
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">
-                  Rating
-                </CardTitle>
-                <Star className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">N/A</div>
-                <p className="text-xs text-muted-foreground">
-                  No reviews yet
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">
-                  Availability
-                </CardTitle>
-                <Clock className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-md font-bold flex items-center">
-                  {profile.is24_7 ? (
-                    <Badge className="bg-green-500">24/7 Available</Badge>
-                  ) : (
-                    <Badge variant="outline">Standard Hours</Badge>
-                  )}
-                </div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {profile.is24_7 ? 'Emergency services available' : 'Regular business hours'}
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Profile overview */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Profile Overview</CardTitle>
-              <CardDescription>
-                Your provider profile information
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <h3 className="text-sm font-medium text-muted-foreground">Provider Type</h3>
-                    <p className="text-base">{profile.providerType.replace('_', ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())}</p>
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-medium text-muted-foreground">Location</h3>
-                    <p className="text-base">{profile.location}</p>
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-medium text-muted-foreground">Experience</h3>
-                    <p className="text-base">{profile.yearsOfExperience} years</p>
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-medium text-muted-foreground">Education</h3>
-                    <p className="text-base">{profile.education}</p>
-                  </div>
-                </div>
-
-                <Separator />
-
-                <div>
-                  <h3 className="text-sm font-medium text-muted-foreground mb-2">Languages</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {profile.languages?.map((lang: string) => (
-                      <Badge key={lang} variant="secondary">
-                        {lang.charAt(0).toUpperCase() + lang.slice(1)}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-
-                <Separator />
-
-                <div>
-                  <h3 className="text-sm font-medium text-muted-foreground mb-2">Description</h3>
-                  <p className="text-sm">{profile.description}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Services Tab */}
-        <TabsContent value="services" className="space-y-4">
-          <ServiceManagement providerId={profile.id} />
-        </TabsContent>
-
-        {/* Bookings Tab */}
-        <TabsContent value="bookings" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Booking Management</CardTitle>
-              <CardDescription>
-                Manage your client bookings and appointments
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {isLoadingBookings ? (
-                <div className="flex justify-center py-8">
-                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                </div>
-              ) : bookings.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-8 text-center">
-                  <div className="rounded-full bg-muted p-3">
-                    <CalendarRange className="h-8 w-8 text-muted-foreground" />
-                  </div>
-                  <h3 className="mt-4 text-lg font-semibold">No bookings yet</h3>
-                  <p className="mt-2 text-sm text-muted-foreground max-w-sm">
-                    When clients book your services, they will appear here
-                  </p>
-                </div>
+                />
               ) : (
-                <div className="text-center py-8">
-                  <h3 className="text-lg font-semibold">Booking Management Coming Soon</h3>
-                  <p className="text-sm text-muted-foreground mt-2">
-                    This feature is under development. Check back soon!
-                  </p>
-                </div>
+                <>
+                  <FormField
+                    control={serviceForm.control}
+                    name="percentageRate"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Percentage Rate (%)</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="number" 
+                            min="0"
+                            max="100"
+                            step="0.01"
+                            placeholder="e.g., 1.5 for 1.5%"
+                            {...field}
+                            onChange={(e) => field.onChange(Number(e.target.value))}
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          Enter the percentage rate (e.g., 1.5 for 1.5%)
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={serviceForm.control}
+                    name="minPrice"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Minimum Fee (in RON cents)</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="number" 
+                            min="0"
+                            placeholder="e.g., 10000 for 100 RON"
+                            {...field}
+                            onChange={(e) => field.onChange(Number(e.target.value))}
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          Minimum fee amount in RON cents (e.g., 10000 for 100 RON)
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </>
               )}
-            </CardContent>
-          </Card>
-        </TabsContent>
 
-        {/* Messages Tab */}
-        <TabsContent value="messages" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Messages</CardTitle>
-              <CardDescription>
-                Communicate with your clients
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-col items-center justify-center py-8 text-center">
-                <div className="rounded-full bg-muted p-3">
-                  <MessageSquare className="h-8 w-8 text-muted-foreground" />
-                </div>
-                <h3 className="mt-4 text-lg font-semibold">Messaging Coming Soon</h3>
-                <p className="mt-2 text-sm text-muted-foreground max-w-sm">
-                  The messaging feature is under development. You'll be able to communicate with clients here.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+              <DialogFooter>
+                <Button 
+                  type="submit"
+                  disabled={createServiceMutation.isPending || updateServiceMutation.isPending}
+                >
+                  {(createServiceMutation.isPending || updateServiceMutation.isPending) 
+                    ? "Saving..." 
+                    : serviceToEdit ? "Update Service" : "Add Service"
+                  }
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Confirm Deletion</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this service? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              variant="outline"
+              onClick={() => setIsDeleteDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={confirmDeleteService}
+              disabled={deleteServiceMutation.isPending}
+            >
+              {deleteServiceMutation.isPending ? "Deleting..." : "Delete Service"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
-};
-
-export default ProviderDashboard;
+}
