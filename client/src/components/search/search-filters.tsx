@@ -12,20 +12,23 @@ interface SearchFiltersProps {
 export default function SearchFilters({ onSearch }: SearchFiltersProps) {
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const [specialization, setSpecialization] = useState("");
+  const [specialization, setSpecialization] = useState("all");
   const [minPrice, setMinPrice] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
-  const [availability, setAvailability] = useState("");
-  const [rating, setRating] = useState("");
+  const [availability, setAvailability] = useState("any");
+  const [rating, setRating] = useState("any");
 
   const handleSubmit = () => {
-    onSearch({
+    // Convert special "all" and "any" values to empty strings or null values for filtering
+    const filters = {
       searchTerm,
-      specialization,
+      specialization: specialization === "all" ? null : specialization,
       priceRange: { min: minPrice, max: maxPrice },
-      availability,
-      rating
-    });
+      availability: availability === "any" ? null : availability,
+      rating: rating === "any" ? null : rating
+    };
+    
+    onSearch(filters);
   };
 
   return (
@@ -71,7 +74,7 @@ export default function SearchFilters({ onSearch }: SearchFiltersProps) {
                   <SelectValue placeholder="All specializations" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All specializations</SelectItem>
+                  <SelectItem value="all">All specializations</SelectItem>
                   <SelectItem value="notary">Notaries</SelectItem>
                   <SelectItem value="judicial_executor">Judicial Executors</SelectItem>
                   <SelectItem value="lawyer">Lawyers</SelectItem>
@@ -106,7 +109,7 @@ export default function SearchFilters({ onSearch }: SearchFiltersProps) {
                   <SelectValue placeholder="Any time" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Any time</SelectItem>
+                  <SelectItem value="any">Any time</SelectItem>
                   <SelectItem value="today">Today</SelectItem>
                   <SelectItem value="this_week">This week</SelectItem>
                   <SelectItem value="custom">Custom...</SelectItem>
@@ -121,7 +124,7 @@ export default function SearchFilters({ onSearch }: SearchFiltersProps) {
                   <SelectValue placeholder="Any rating" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Any rating</SelectItem>
+                  <SelectItem value="any">Any rating</SelectItem>
                   <SelectItem value="4">4+ stars</SelectItem>
                   <SelectItem value="3">3+ stars</SelectItem>
                 </SelectContent>
