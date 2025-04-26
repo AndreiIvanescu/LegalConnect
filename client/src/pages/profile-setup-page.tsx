@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'wouter';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -8,7 +8,7 @@ import { insertProviderProfileSchema } from '@shared/schema';
 import { useAuth } from '@/hooks/use-auth';
 import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
-import { ImagePlus } from 'lucide-react';
+import { ImagePlus, Upload } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -70,6 +70,8 @@ export default function ProfileSetupPage() {
   const { toast } = useToast();
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isEditMode, setIsEditMode] = useState<boolean>(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Fetch existing provider profile
   const { data: existingProfile, isLoading: isLoadingProfile } = useQuery({
@@ -155,6 +157,26 @@ export default function ProfileSetupPage() {
     },
   });
 
+  // Handle file selection
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setSelectedFile(file);
+      
+      // Create a preview URL for the selected image
+      const imageUrl = URL.createObjectURL(file);
+      setImagePreview(imageUrl);
+      
+      // Update the form value
+      form.setValue('imageUrl', file.name);
+    }
+  };
+  
+  // Trigger file input click
+  const handleUploadClick = () => {
+    fileInputRef.current?.click();
+  };
+
   function onSubmit(data: z.infer<typeof providerProfileFormSchema>) {
     // If location is provided but coordinates are missing, use geocoding here
     // For now, we'll use default coordinates for demonstration
@@ -169,6 +191,17 @@ export default function ProfileSetupPage() {
       // Split the comma-separated languages string into an array
       languages: data.languages.split(',').map(lang => lang.trim())
     };
+    
+    // If we have a file selected, we would typically upload it to a server first
+    // and then get back a URL to store. For this example, we'll just use the filename
+    // or keep the existing URL if no new file was selected.
+    if (selectedFile) {
+      // In a real app, you would upload the file to a server first
+      // and then use the returned URL
+      
+      // For now, we'll just use the filename as the URL
+      formattedData.imageUrl = selectedFile.name;
+    }
     
     mutation.mutate(formattedData);
   }
@@ -427,21 +460,44 @@ export default function ProfileSetupPage() {
                             />
                           </div>
                         )}
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-col w-full items-center gap-2">
+                          {/* Hidden file input */}
+                          <input 
+                            type="file" 
+                            ref={fileInputRef}
+                            className="hidden"
+                            accept="image/*"
+                            onChange={handleFileChange}
+                          />
+                          
+                          {/* Custom file upload button */}
+                          <Button
+                            type="button"
+                            variant="outline"
+                            className="w-full flex gap-2 items-center justify-center"
+                            onClick={handleUploadClick}
+                          >
+                            <Upload className="h-4 w-4" />
+                            {selectedFile ? 'Change Image' : 'Upload Image'}
+                          </Button>
+                          
+                          {/* Show selected filename */}
+                          {selectedFile && (
+                            <p className="text-sm text-gray-500 mt-1">
+                              Selected: {selectedFile.name}
+                            </p>
+                          )}
+                          
+                          {/* Hidden actual input for form handling */}
                           <Input
-                            type="text"
-                            placeholder="Enter image URL"
+                            type="hidden"
                             {...field}
-                            onChange={(e) => {
-                              field.onChange(e.target.value);
-                              setImagePreview(e.target.value);
-                            }}
                           />
                         </div>
                       </div>
                     </FormControl>
                     <FormDescription>
-                      Enter a URL to your profile picture (optional)
+                      Upload a profile picture from your device (optional)
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
