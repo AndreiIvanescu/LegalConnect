@@ -1,7 +1,6 @@
 import { Switch, Route } from "wouter";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { ThemeProvider } from "next-themes";
 import NotFound from "@/pages/not-found";
 import HomePage from "@/pages/home-page";
 import AuthPage from "@/pages/auth-page";
@@ -35,17 +34,15 @@ function Router() {
 
 function App() {
   return (
-    <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-      <TooltipProvider>
-        <div className="relative min-h-screen flex flex-col">
-          <AuthAwareHeader />
-          <main className="flex-1">
-            <Router />
-          </main>
-          <Toaster />
-        </div>
-      </TooltipProvider>
-    </ThemeProvider>
+    <TooltipProvider>
+      <div className="relative min-h-screen flex flex-col">
+        <AuthAwareHeader />
+        <main className="flex-1">
+          <Router />
+        </main>
+        <Toaster />
+      </div>
+    </TooltipProvider>
   );
 }
 

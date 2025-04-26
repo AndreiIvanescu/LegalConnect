@@ -27,7 +27,6 @@ import {
 } from '@/components/ui/sheet';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Shield, Menu, LogIn, LogOut, User, Mail, Calendar, Settings } from 'lucide-react';
-import { ThemeToggle } from '@/components/theme/theme-toggle';
 
 function AuthAwareHeader() {
   const { user, logoutMutation } = useAuth();
@@ -95,8 +94,6 @@ function AuthAwareHeader() {
         </div>
 
         <div className="flex items-center gap-4">
-          <ThemeToggle />
-          
           {user ? (
             <>
               {isMobile ? (
