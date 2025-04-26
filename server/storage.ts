@@ -174,6 +174,9 @@ export class DatabaseStorage implements IStorage {
     try {
       // Use PostGIS for spatial query to find providers within distance
       // We use the SQL query directly to leverage PostGIS functions
+      // We'll use two different approaches for finding providers:
+      // 1. First check if providers are within their own service radius
+      // 2. Then check if providers are within the user's max search distance
       const { rows: nearbyProfiles } = await pool.query(`
         SELECT 
           p.*,
@@ -185,11 +188,22 @@ export class DatabaseStorage implements IStorage {
         WHERE 
           -- Only return providers with valid location data
           p.latitude IS NOT NULL AND p.longitude IS NOT NULL
-          -- If provider radius is less than max distance, use max distance
-          AND ST_DWithin(
-            geolocation,
-            ST_SetSRID(ST_MakePoint($2, $1), 4326)::geography,
-            GREATEST(p.service_radius, $3)
+          AND (
+            -- Check if provider is within their own service radius (if defined)
+            (p.service_radius IS NOT NULL AND 
+             ST_DWithin(
+               geolocation,
+               ST_SetSRID(ST_MakePoint($2, $1), 4326)::geography,
+               p.service_radius
+             )
+            )
+            OR
+            -- Or check if provider is within the specified max distance 
+            ST_DWithin(
+              geolocation,
+              ST_SetSRID(ST_MakePoint($2, $1), 4326)::geography,
+              $3
+            )
           )
         ORDER BY distance ASC
       `, [latitude, longitude, maxDistance]);
@@ -231,7 +245,7 @@ export class DatabaseStorage implements IStorage {
             education: profile.education || '',
             specializations: specializationsList.map((s: any) => s.name),
             startingPrice: servicesList.length > 0 
-              ? `${Math.min(...servicesList.map((s: any) => s.price || 0)) / 100} RON`
+              ? `${Math.min(...servicesList.map((s: any) => s.price || s.min_price || Infinity).filter((p: any) => p !== null && p !== undefined && isFinite(p))) / 100} RON`
               : 'Contact for pricing',
             isTopRated: profile.is_top_rated,
             isAvailable24_7: profile.is_24_7,
@@ -300,7 +314,7 @@ export class DatabaseStorage implements IStorage {
         specializations: specializationsList.map(s => s.name),
         services: servicesList,
         startingPrice: servicesList.length > 0 
-          ? `${Math.min(...servicesList.map(s => s.price || 0)) / 100} RON`
+          ? `${Math.min(...servicesList.map((s: any) => s.price || s.minPrice || Infinity).filter((p: any) => p !== null && p !== undefined && isFinite(p))) / 100} RON`
           : 'Contact for pricing',
         isTopRated: profile.isTopRated,
         isAvailable24_7: profile.is24_7,
