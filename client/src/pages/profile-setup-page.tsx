@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useLocation } from 'wouter';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -8,6 +8,7 @@ import { insertProviderProfileSchema } from '@shared/schema';
 import { useAuth } from '@/hooks/use-auth';
 import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
+import { ImagePlus } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -65,6 +66,7 @@ export default function ProfileSetupPage() {
   const [, navigate] = useLocation();
   const { user } = useAuth();
   const { toast } = useToast();
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   const form = useForm<z.infer<typeof providerProfileSchema>>({
     resolver: zodResolver(providerProfileSchema),
@@ -81,6 +83,7 @@ export default function ProfileSetupPage() {
       isTopRated: false,
       completedServices: 0,
       serviceRadius: 5000, // 5km default
+      imageUrl: '',
     },
   });
 

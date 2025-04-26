@@ -48,6 +48,7 @@ export const providerProfiles = pgTable("provider_profiles", {
   is24_7: boolean("is_24_7").default(false),
   isTopRated: boolean("is_top_rated").default(false),
   completedServices: integer("completed_services").default(0),
+  imageUrl: text("image_url"),
 });
 
 // Provider specializations
