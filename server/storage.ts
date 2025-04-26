@@ -185,11 +185,11 @@ export class DatabaseStorage implements IStorage {
         WHERE 
           -- Only return providers with valid location data
           p.latitude IS NOT NULL AND p.longitude IS NOT NULL
-          -- Use service radius if available, otherwise use max distance
+          -- If provider radius is less than max distance, use max distance
           AND ST_DWithin(
             geolocation,
             ST_SetSRID(ST_MakePoint($2, $1), 4326)::geography,
-            COALESCE(p.service_radius, $3)
+            GREATEST(p.service_radius, $3)
           )
         ORDER BY distance ASC
       `, [latitude, longitude, maxDistance]);
