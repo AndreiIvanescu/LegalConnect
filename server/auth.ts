@@ -52,10 +52,18 @@ export function setupAuth(app: Express) {
           return done(null, false, { message: "Incorrect username or password" });
         }
         
-        // For our simple in-memory implementation we don't hash passwords for ease of development
-        // In a real application, we would use the comparePasswords function below
-        if (user.password !== password) {
-          return done(null, false, { message: "Incorrect username or password" });
+        // Check if the password has a salt separator (indicating it's hashed)
+        if (user.password.includes('.')) {
+          // Password is hashed, use comparePasswords
+          const isValid = await comparePasswords(password, user.password);
+          if (!isValid) {
+            return done(null, false, { message: "Incorrect username or password" });
+          }
+        } else {
+          // Legacy password check (plaintext) - for backward compatibility
+          if (user.password !== password) {
+            return done(null, false, { message: "Incorrect username or password" });
+          }
         }
         
         return done(null, user);
@@ -82,10 +90,11 @@ export function setupAuth(app: Express) {
         return res.status(400).json({ message: "Username already exists" });
       }
       
-      // For real application we would hash the password here
-      // req.body.password = await hashPassword(req.body.password);
+      // Hash the password for secure storage
+      const userData = { ...req.body };
+      userData.password = await hashPassword(userData.password);
       
-      const user = await storage.createUser(req.body);
+      const user = await storage.createUser(userData);
       
       // Remove password from response
       const userWithoutPassword = { ...user };

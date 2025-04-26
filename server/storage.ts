@@ -267,7 +267,7 @@ export class DatabaseStorage implements IStorage {
       .where(
         or(
           eq(messages.senderId, userId),
-          eq(messages.recipientId, userId)
+          eq(messages.receiverId, userId)
         )
       );
   }
@@ -280,11 +280,11 @@ export class DatabaseStorage implements IStorage {
         or(
           and(
             eq(messages.senderId, userId1),
-            eq(messages.recipientId, userId2)
+            eq(messages.receiverId, userId2)
           ),
           and(
             eq(messages.senderId, userId2),
-            eq(messages.recipientId, userId1)
+            eq(messages.receiverId, userId1)
           )
         )
       );
