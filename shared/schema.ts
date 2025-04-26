@@ -2,8 +2,9 @@ import { pgTable, text, serial, integer, boolean, timestamp, json, uniqueIndex, 
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-// We'll implement PostGIS manually through SQL functions for geospatial queries
-// This approach allows for better control and avoids issues with Drizzle ORM custom types
+// PostGIS geospatial data is handled through raw SQL statements
+// We include standard lat/long fields for easy access, while more complex spatial operations
+// will be performed through SQL functions directly
 
 // Enum for user roles
 export const userRoleEnum = pgEnum('user_role', ['client', 'provider']);

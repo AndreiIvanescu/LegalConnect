@@ -15,7 +15,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const providers = await storage.getAllProviders();
       res.json(providers);
     } catch (error) {
+      console.error("Error fetching providers:", error);
       res.status(500).json({ message: "Failed to fetch providers" });
+    }
+  });
+  
+  // Get providers by location proximity
+  app.get("/api/providers/nearby", async (req, res) => {
+    try {
+      const { latitude, longitude, maxDistance = 10000 } = req.query;
+      
+      if (!latitude || !longitude) {
+        return res.status(400).json({ message: "Latitude and longitude are required" });
+      }
+      
+      const lat = parseFloat(latitude as string);
+      const lng = parseFloat(longitude as string);
+      const distance = parseInt(maxDistance as string);
+      
+      if (isNaN(lat) || isNaN(lng) || isNaN(distance)) {
+        return res.status(400).json({ message: "Invalid location parameters" });
+      }
+      
+      const providers = await storage.getNearbyProviders(lat, lng, distance);
+      res.json(providers);
+    } catch (error) {
+      console.error("Error fetching nearby providers:", error);
+      res.status(500).json({ message: "Failed to fetch nearby providers" });
     }
   });
 

@@ -28,6 +28,7 @@ export interface IStorage {
   
   // Provider methods
   getAllProviders(): Promise<any[]>;
+  getNearbyProviders(latitude: number, longitude: number, maxDistance: number): Promise<any[]>;
   getProvider(id: number): Promise<any | undefined>;
   getProviderProfileByUserId(userId: number): Promise<ProviderProfile | undefined>;
   createProviderProfile(profile: InsertProviderProfile): Promise<ProviderProfile>;
@@ -128,11 +129,11 @@ export class DatabaseStorage implements IStorage {
             .where(eq(services.providerId, profile.id));
           
           // Calculate rating based on reviews
-          const reviews = await db.select().from(reviews)
+          const reviewList = await db.select().from(reviews)
             .where(eq(reviews.revieweeId, profile.userId));
           
-          const avgRating = reviews.length > 0 
-            ? reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length 
+          const avgRating = reviewList.length > 0 
+            ? reviewList.reduce((sum: number, review: any) => sum + review.rating, 0) / reviewList.length 
             : 0;
           
           // Format the provider data for the client
@@ -168,6 +169,91 @@ export class DatabaseStorage implements IStorage {
       return []; // Return empty array on error
     }
   }
+  
+  async getNearbyProviders(latitude: number, longitude: number, maxDistance: number): Promise<any[]> {
+    try {
+      // Use PostGIS for spatial query to find providers within distance
+      // We use the SQL query directly to leverage PostGIS functions
+      const { rows: nearbyProfiles } = await pool.query(`
+        SELECT 
+          p.*,
+          ST_Distance(
+            geolocation, 
+            ST_SetSRID(ST_MakePoint($2, $1), 4326)::geography
+          ) as distance
+        FROM provider_profiles p
+        WHERE 
+          -- Only return providers with valid location data
+          p.latitude IS NOT NULL AND p.longitude IS NOT NULL
+          -- Use service radius if available, otherwise use max distance
+          AND ST_DWithin(
+            geolocation,
+            ST_SetSRID(ST_MakePoint($2, $1), 4326)::geography,
+            COALESCE(p.service_radius, $3)
+          )
+        ORDER BY distance ASC
+      `, [latitude, longitude, maxDistance]);
+
+      if (!nearbyProfiles || nearbyProfiles.length === 0) {
+        return [];
+      }
+      
+      // Fetch additional data for each profile
+      const providersWithDetails = await Promise.all(nearbyProfiles.map(async (profile: any) => {
+        try {
+          // Get user data
+          const [userData] = await db.select().from(users).where(eq(users.id, profile.user_id));
+          
+          // Get specializations
+          const specializationsList = await db.select().from(specializations)
+            .where(eq(specializations.providerId, profile.id));
+          
+          // Get services
+          const servicesList = await db.select().from(services)
+            .where(eq(services.providerId, profile.id));
+          
+          // Calculate rating based on reviews
+          const reviews = await db.select().from(reviews)
+            .where(eq(reviews.revieweeId, profile.user_id));
+          
+          const avgRating = reviews.length > 0 
+            ? reviews.reduce((sum: number, review: any) => sum + review.rating, 0) / reviews.length 
+            : 0;
+          
+          // Format the provider data for the client
+          return {
+            id: profile.id,
+            name: userData?.fullName || 'Unknown Provider',
+            type: profile.provider_type,
+            rating: avgRating,
+            reviewCount: reviews.length,
+            location: profile.location || 'Unknown',
+            education: profile.education || '',
+            specializations: specializationsList.map((s: any) => s.name),
+            startingPrice: servicesList.length > 0 
+              ? `${Math.min(...servicesList.map((s: any) => s.price || 0)) / 100} RON`
+              : 'Contact for pricing',
+            isTopRated: profile.is_top_rated,
+            isAvailable24_7: profile.is_24_7,
+            imageUrl: userData?.avatar || '/placeholder-avatar.jpg',
+            latitude: profile.latitude,
+            longitude: profile.longitude,
+            serviceRadius: profile.service_radius,
+            distance: Math.round(profile.distance) // Distance in meters
+          };
+        } catch (error) {
+          console.error(`Error processing nearby provider profile ${profile.id}:`, error);
+          return null; // Skip this provider on error
+        }
+      }));
+      
+      // Filter out any null entries from failed processing
+      return providersWithDetails.filter(provider => provider !== null);
+    } catch (error) {
+      console.error("Error in getNearbyProviders:", error);
+      return []; // Return empty array on error
+    }
+  }
 
   async getProvider(id: number): Promise<any | undefined> {
     try {
@@ -193,11 +279,11 @@ export class DatabaseStorage implements IStorage {
         .where(eq(services.providerId, profile.id));
       
       // Calculate rating based on reviews
-      const reviews = await db.select().from(reviews)
+      const reviewList = await db.select().from(reviews)
         .where(eq(reviews.revieweeId, profile.userId));
       
-      const avgRating = reviews.length > 0 
-        ? reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length 
+      const avgRating = reviewList.length > 0 
+        ? reviewList.reduce((sum: number, review: any) => sum + review.rating, 0) / reviewList.length 
         : 0;
       
       // Format the provider data for the client
@@ -206,7 +292,7 @@ export class DatabaseStorage implements IStorage {
         name: userData?.fullName || 'Unknown Provider',
         type: profile.providerType,
         rating: avgRating,
-        reviewCount: reviews.length,
+        reviewCount: reviewList.length,
         location: profile.location || 'Unknown',
         education: profile.education || '',
         description: profile.description || '',
