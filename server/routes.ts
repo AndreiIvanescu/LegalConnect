@@ -4,6 +4,7 @@ import { storage } from "./storage";
 import { setupAuth } from "./auth";
 import { z } from "zod";
 import { WebSocketServer } from 'ws';
+import { setupWebSocketServer } from './websocket';
 import { insertProviderProfileSchema, insertServiceSchema, insertBookingSchema, insertReviewSchema, insertMessageSchema } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -380,6 +381,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   const httpServer = createServer(app);
+  
+  // Set up WebSocket server for real-time communication
+  const wss = setupWebSocketServer(httpServer);
 
   return httpServer;
 }
