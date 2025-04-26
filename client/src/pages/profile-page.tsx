@@ -333,7 +333,7 @@ export default function ProfilePage() {
                           <p className="text-neutral-500 mb-4">
                             You need to complete your provider profile to start offering services.
                           </p>
-                          <Button>Set Up Provider Profile</Button>
+                          <Button onClick={() => window.location.href = '/profile/setup'}>Set Up Provider Profile</Button>
                         </div>
                       )}
                     </>
