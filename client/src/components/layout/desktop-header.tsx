@@ -25,18 +25,18 @@ export default function DesktopHeader() {
             <nav className="ml-8">
               <ul className="flex space-x-6">
                 <li>
-                  <Link href="/">
-                    <a className="text-neutral-700 hover:text-primary-600 font-medium">Find Providers</a>
+                  <Link href="/" className="text-neutral-700 hover:text-primary-600 font-medium">
+                    Find Providers
                   </Link>
                 </li>
                 <li>
-                  <Link href="/services">
-                    <a className="text-neutral-700 hover:text-primary-600 font-medium">Services</a>
+                  <Link href="/services" className="text-neutral-700 hover:text-primary-600 font-medium">
+                    Services
                   </Link>
                 </li>
                 <li>
-                  <Link href="/how-it-works">
-                    <a className="text-neutral-700 hover:text-primary-600 font-medium">How it works</a>
+                  <Link href="/how-it-works" className="text-neutral-700 hover:text-primary-600 font-medium">
+                    How it works
                   </Link>
                 </li>
               </ul>
