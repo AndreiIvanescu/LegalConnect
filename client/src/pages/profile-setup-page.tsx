@@ -339,6 +339,47 @@ export default function ProfileSetupPage() {
                   )}
                 />
               </div>
+              
+              <FormField
+                control={form.control}
+                name="imageUrl"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="flex items-center gap-1">
+                      <ImagePlus className="h-4 w-4" />
+                      Profile Picture
+                    </FormLabel>
+                    <FormControl>
+                      <div className="flex flex-col items-center gap-4">
+                        {imagePreview && (
+                          <div className="relative h-24 w-24 rounded-full overflow-hidden border-2 border-primary">
+                            <img
+                              src={imagePreview}
+                              alt="Profile preview"
+                              className="h-full w-full object-cover"
+                            />
+                          </div>
+                        )}
+                        <div className="flex items-center gap-2">
+                          <Input
+                            type="text"
+                            placeholder="Enter image URL"
+                            {...field}
+                            onChange={(e) => {
+                              field.onChange(e.target.value);
+                              setImagePreview(e.target.value);
+                            }}
+                          />
+                        </div>
+                      </div>
+                    </FormControl>
+                    <FormDescription>
+                      Enter a URL to your profile picture (optional)
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
               <CardFooter className="px-0 pb-0 flex justify-between">
                 <Button

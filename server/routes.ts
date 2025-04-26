@@ -18,7 +18,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(providers);
     } catch (error) {
       console.error("Error fetching providers:", error);
-      res.status(500).json({ message: "Failed to fetch providers" });
+      // Return an empty array instead of error to prevent frontend crashes
+      res.json([]);
     }
   });
   

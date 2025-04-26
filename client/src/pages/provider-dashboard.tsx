@@ -75,7 +75,9 @@ import {
   CreditCard,
   CheckCircle2,
   AlarmClock,
-  XCircle
+  XCircle,
+  ImagePlus,
+  User
 } from 'lucide-react';
 
 // Service form schema with additional validations
