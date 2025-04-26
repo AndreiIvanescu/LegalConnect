@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { z } from 'zod';
 import { insertProviderProfileSchema } from '@shared/schema';
 import { useAuth } from '@/hooks/use-auth';
@@ -69,6 +69,13 @@ export default function ProfileSetupPage() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [isEditMode, setIsEditMode] = useState<boolean>(false);
+
+  // Fetch existing provider profile
+  const { data: existingProfile, isLoading: isLoadingProfile } = useQuery({
+    queryKey: ['/api/profile/provider'],
+    enabled: !!user && user.role === 'provider',
+  });
 
   const form = useForm<z.infer<typeof providerProfileFormSchema>>({
     resolver: zodResolver(providerProfileFormSchema),
@@ -89,21 +96,59 @@ export default function ProfileSetupPage() {
     },
   });
 
+  // When existing profile data is loaded, set form values
+  useEffect(() => {
+    if (existingProfile && Object.keys(existingProfile).length > 0) {
+      setIsEditMode(true);
+      
+      // Convert languages array to comma-separated string
+      const languagesString = Array.isArray(existingProfile.languages) 
+        ? existingProfile.languages.join(', ') 
+        : '';
+        
+      // Set image preview if available
+      if (existingProfile.imageUrl) {
+        setImagePreview(existingProfile.imageUrl);
+      }
+      
+      // Reset form with existing profile data
+      form.reset({
+        userId: user?.id,
+        providerType: existingProfile.providerType || 'notary',
+        description: existingProfile.description || '',
+        education: existingProfile.education || '',
+        yearsOfExperience: existingProfile.yearsOfExperience || 0,
+        languages: languagesString,
+        location: existingProfile.location || '',
+        workingHours: existingProfile.workingHours || '',
+        is24_7: existingProfile.is24_7 || false,
+        isTopRated: existingProfile.isTopRated || false,
+        completedServices: existingProfile.completedServices || 0,
+        serviceRadius: existingProfile.serviceRadius || 5000,
+        imageUrl: existingProfile.imageUrl || '',
+        latitude: existingProfile.latitude,
+        longitude: existingProfile.longitude,
+      });
+    }
+  }, [existingProfile, form, user]);
+
   const mutation = useMutation({
     mutationFn: async (data: any) => {
-      const response = await apiRequest('POST', '/api/profile/provider', data);
+      // Use PATCH to update if in edit mode, otherwise POST to create
+      const method = isEditMode ? 'PATCH' : 'POST';
+      const response = await apiRequest(method, '/api/profile/provider', data);
       return await response.json();
     },
     onSuccess: () => {
       toast({
-        title: "Profile created successfully",
+        title: isEditMode ? "Profile updated successfully" : "Profile created successfully",
         description: "You can now manage your provider profile",
       });
       navigate('/provider/dashboard');
     },
     onError: (error: Error) => {
       toast({
-        title: "Failed to create profile",
+        title: isEditMode ? "Failed to update profile" : "Failed to create profile",
         description: error.message,
         variant: "destructive",
       });
@@ -128,16 +173,29 @@ export default function ProfileSetupPage() {
     mutation.mutate(formattedData);
   }
 
+  if (isLoadingProfile) {
+    return (
+      <div className="container py-8 max-w-3xl flex justify-center items-center min-h-[300px]">
+        <div className="text-center">
+          <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
+          <p className="text-neutral-600">Loading profile data...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="container py-8 max-w-3xl">
       <Card className="w-full">
         <CardHeader>
           <CardTitle className="text-2xl flex items-center gap-2">
             <Shield className="h-6 w-6 text-primary" />
-            Complete Your Provider Profile
+            {isEditMode ? 'Edit Your Provider Profile' : 'Complete Your Provider Profile'}
           </CardTitle>
           <CardDescription>
-            Set up your professional profile to start offering legal services
+            {isEditMode 
+              ? 'Update your professional information to better serve your clients' 
+              : 'Set up your professional profile to start offering legal services'}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -402,7 +460,7 @@ export default function ProfileSetupPage() {
                   type="submit"
                   disabled={mutation.isPending}
                 >
-                  {mutation.isPending ? "Submitting..." : "Complete Profile Setup"}
+                  {mutation.isPending ? "Submitting..." : (isEditMode ? "Save Changes" : "Complete Profile Setup")}
                 </Button>
               </CardFooter>
             </form>
