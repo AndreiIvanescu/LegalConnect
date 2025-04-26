@@ -1,4 +1,4 @@
-import { MapPin, GraduationCap, Star } from "lucide-react";
+import { MapPin, GraduationCap, Star, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
@@ -25,11 +25,21 @@ export default function ProviderCard({ provider }: ProviderCardProps) {
   return (
     <Card className="bg-white rounded-xl shadow-sm border border-neutral-200 overflow-hidden hover:shadow-md transition-shadow">
       <div className="relative">
-        <img 
-          src={provider.imageUrl} 
-          alt={`${provider.name} portrait`} 
-          className="w-full h-48 object-cover"
-        />
+        {provider.imageUrl ? (
+          <img 
+            src={provider.imageUrl} 
+            alt={`${provider.name} portrait`} 
+            className="w-full h-48 object-cover"
+            onError={(e) => {
+              // If image fails to load, replace with a placeholder
+              e.currentTarget.src = "https://via.placeholder.com/300x200?text=No+Image+Available";
+            }}
+          />
+        ) : (
+          <div className="w-full h-48 bg-neutral-100 flex items-center justify-center">
+            <User className="h-16 w-16 text-neutral-400" />
+          </div>
+        )}
         {provider.isTopRated && (
           <div className="absolute top-3 right-3 bg-amber-500 text-white px-2 py-1 rounded-lg text-sm font-medium">
             Top Rated

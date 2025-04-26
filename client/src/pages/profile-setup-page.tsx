@@ -8,7 +8,7 @@ import { insertProviderProfileSchema } from '@shared/schema';
 import { useAuth } from '@/hooks/use-auth';
 import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
-import { ImagePlus, Upload } from 'lucide-react';
+import { ImagePlus, Upload, User } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -451,13 +451,30 @@ export default function ProfileSetupPage() {
                     </FormLabel>
                     <FormControl>
                       <div className="flex flex-col items-center gap-4">
-                        {imagePreview && (
+                        {imagePreview ? (
                           <div className="relative h-24 w-24 rounded-full overflow-hidden border-2 border-primary">
                             <img
                               src={imagePreview}
                               alt="Profile preview"
                               className="h-full w-full object-cover"
+                              onError={(e) => {
+                                // If image fails to load, show placeholder
+                                e.currentTarget.src = "https://via.placeholder.com/100x100?text=Error";
+                                // Also clear the stored URL to avoid persisting bad URLs
+                                form.setValue('imageUrl', '');
+                                setImagePreview(null);
+                                // Alert the user
+                                toast({
+                                  title: "Image Error",
+                                  description: "Failed to load the image. Please try uploading again.",
+                                  variant: "destructive"
+                                });
+                              }}
                             />
+                          </div>
+                        ) : (
+                          <div className="h-24 w-24 rounded-full bg-muted flex items-center justify-center border-2 border-dashed border-muted-foreground">
+                            <User className="h-10 w-10 text-muted-foreground" />
                           </div>
                         )}
                         <div className="flex flex-col w-full items-center gap-2">
