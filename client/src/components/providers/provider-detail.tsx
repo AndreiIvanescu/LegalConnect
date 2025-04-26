@@ -245,19 +245,36 @@ export default function ProviderDetail({ providerId }: ProviderDetailProps) {
             </TabsContent>
 
             {/* Services Tab Content */}
-            <TabsContent value="services">
+            <TabsContent value="services" className="fade-in">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {provider.services && provider.services.map((service, index) => (
-                  <Card key={index}>
-                    <CardContent className="pt-6">
-                      <h3 className="text-lg font-semibold mb-2">{service.title}</h3>
-                      <p className="text-neutral-600 mb-4">{service.description}</p>
-                      <div className="flex justify-between items-end">
-                        <div>
-                          <p className="text-sm text-neutral-500">Price</p>
-                          <p className="font-semibold text-lg">{service.price}</p>
+                  <Card key={index} className="service-card overflow-hidden border border-neutral-200 hover:border-primary/30">
+                    <CardContent className="pt-6 relative">
+                      {service.isTopRated && (
+                        <div className="absolute top-3 right-3">
+                          <Badge className="bg-amber-500 hover:bg-amber-600">Top Rated</Badge>
                         </div>
-                        <Button>Book This Service</Button>
+                      )}
+                      <h3 className="text-lg font-semibold mb-2 transition-colors">{service.title}</h3>
+                      
+                      {/* Beautiful expectation box */}
+                      <div className="mb-5">
+                        <h4 className="text-sm font-medium text-neutral-700 mb-2">Detailed explanation of what clients can expect</h4>
+                        <div className="bg-neutral-50 p-4 rounded-lg border border-neutral-200">
+                          <p className="text-neutral-700 text-sm">{service.description}</p>
+                        </div>
+                      </div>
+                      
+                      <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-end gap-4">
+                        <div>
+                          <p className="text-sm text-neutral-500 mb-1">Pricing Type</p>
+                          <p className="font-medium text-neutral-700 mb-2">{service.priceType || 'Fixed Price'}</p>
+                          <div className="flex items-baseline gap-1">
+                            <p className="font-semibold text-xl text-primary">{service.price}</p>
+                            {service.priceType === 'percentage' && <span className="text-sm text-neutral-500">min fee applies</span>}
+                          </div>
+                        </div>
+                        <Button className="btn-transition hover-up">Book This Service</Button>
                       </div>
                     </CardContent>
                   </Card>
