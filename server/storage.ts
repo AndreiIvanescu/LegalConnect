@@ -36,6 +36,9 @@ export interface IStorage {
   
   // Service methods
   createService(service: InsertService): Promise<Service>;
+  getServiceById(id: number): Promise<Service | undefined>;
+  updateService(id: number, data: Partial<Service>): Promise<Service>;
+  deleteService(id: number): Promise<void>;
   getServicesByProviderId(providerId: number): Promise<Service[]>;
   
   // Booking methods
@@ -410,6 +413,35 @@ export class DatabaseStorage implements IStorage {
       .returning();
     
     return newService;
+  }
+  
+  async getServiceById(id: number): Promise<Service | undefined> {
+    const [service] = await db
+      .select()
+      .from(services)
+      .where(eq(services.id, id));
+    
+    return service || undefined;
+  }
+  
+  async updateService(id: number, data: Partial<Service>): Promise<Service> {
+    const [updatedService] = await db
+      .update(services)
+      .set(data)
+      .where(eq(services.id, id))
+      .returning();
+    
+    if (!updatedService) {
+      throw new Error("Service not found");
+    }
+    
+    return updatedService;
+  }
+  
+  async deleteService(id: number): Promise<void> {
+    await db
+      .delete(services)
+      .where(eq(services.id, id));
   }
 
   async getServicesByProviderId(providerId: number): Promise<Service[]> {
