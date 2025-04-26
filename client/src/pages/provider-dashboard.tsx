@@ -8,6 +8,7 @@ import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { insertServiceSchema } from '@shared/schema';
+import { formatPrice, parsePrice, getUserCountry, getUserCurrencySymbol } from '@/lib/currency';
 
 import {
   Card,
@@ -291,11 +292,15 @@ export default function ProviderDashboard() {
     }
   };
 
-  const formatPrice = (service: any) => {
+  // Format price based on user's country currency
+  const formatServicePrice = (service: any) => {
+    const userCountry = getUserCountry();
+    
     if (service.priceType === 'fixed') {
-      return `${service.price / 100} RON`;
+      return formatPrice(service.price, userCountry);
     } else {
-      return `${service.percentageRate}% (min. ${service.minPrice / 100} RON)`;
+      const minPriceFormatted = formatPrice(service.minPrice, userCountry);
+      return `${service.percentageRate}% (min. ${minPriceFormatted})`;
     }
   };
 
@@ -520,7 +525,7 @@ export default function ProviderDashboard() {
                               {service.priceType === 'fixed' ? 'Fixed Price' : 'Percentage Rate'}
                             </Badge>
                           </TableCell>
-                          <TableCell>{formatPrice(service)}</TableCell>
+                          <TableCell>{formatServicePrice(service)}</TableCell>
                           <TableCell className="text-right">
                             <div className="flex justify-end gap-2">
                               <Button
