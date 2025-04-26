@@ -806,27 +806,41 @@ export default function ProviderDashboard() {
                 <FormField
                   control={serviceForm.control}
                   name="price"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="flex items-center gap-1">
-                        <CreditCard className="h-4 w-4" />
-                        Fixed Price (in RON cents)
-                      </FormLabel>
-                      <FormControl>
-                        <Input 
-                          type="number" 
-                          min="0"
-                          placeholder="e.g., 15000 for 150 RON"
-                          {...field}
-                          onChange={(e) => field.onChange(Number(e.target.value))}
-                        />
-                      </FormControl>
-                      <FormDescription>
-                        Enter price in RON cents (e.g., 15000 for 150 RON)
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
+                  render={({ field }) => {
+                    // Get the user's country
+                    const userCountry = getUserCountry();
+                    const currency = getCurrencyForCountry(userCountry);
+                    
+                    // Convert cents to full units for display
+                    const displayValue = field.value ? formatPriceValue(field.value, userCountry) : '';
+                    
+                    return (
+                      <FormItem>
+                        <FormLabel className="flex items-center gap-1">
+                          <CreditCard className="h-4 w-4" />
+                          Fixed Price in {currency.symbol}
+                        </FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="number" 
+                            min="0"
+                            step="1"
+                            placeholder={`e.g., 150 ${currency.symbol}`}
+                            value={displayValue}
+                            onChange={(e) => {
+                              // Parse input value and convert to RON cents for storage
+                              const parsedValue = parsePrice(e.target.value, userCountry);
+                              field.onChange(parsedValue);
+                            }}
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          Enter price in full {currency.name} units (e.g., 150 {currency.symbol})
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )
+                  }}
                 />
               ) : (
                 <>
@@ -858,24 +872,38 @@ export default function ProviderDashboard() {
                   <FormField
                     control={serviceForm.control}
                     name="minPrice"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Minimum Fee (in RON cents)</FormLabel>
-                        <FormControl>
-                          <Input 
-                            type="number" 
-                            min="0"
-                            placeholder="e.g., 10000 for 100 RON"
-                            {...field}
-                            onChange={(e) => field.onChange(Number(e.target.value))}
-                          />
-                        </FormControl>
-                        <FormDescription>
-                          Minimum fee amount in RON cents (e.g., 10000 for 100 RON)
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
+                    render={({ field }) => {
+                      // Get the user's country
+                      const userCountry = getUserCountry();
+                      const currency = getCurrencyForCountry(userCountry);
+                      
+                      // Convert cents to full units for display
+                      const displayValue = field.value ? formatPriceValue(field.value, userCountry) : '';
+                      
+                      return (
+                        <FormItem>
+                          <FormLabel>Minimum Fee in {currency.symbol}</FormLabel>
+                          <FormControl>
+                            <Input 
+                              type="number" 
+                              min="0"
+                              step="1"
+                              placeholder={`e.g., 100 ${currency.symbol}`}
+                              value={displayValue}
+                              onChange={(e) => {
+                                // Parse input value and convert to RON cents for storage
+                                const parsedValue = parsePrice(e.target.value, userCountry);
+                                field.onChange(parsedValue);
+                              }}
+                            />
+                          </FormControl>
+                          <FormDescription>
+                            Minimum fee in full {currency.name} units (e.g., 100 {currency.symbol})
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )
+                    }}
                   />
                 </>
               )}

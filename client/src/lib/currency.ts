@@ -14,7 +14,7 @@ export const CURRENCIES: Record<string, CurrencyConfig> = {
     name: 'Romanian Leu',
     code: 'RON',
     exchangeRate: 1,
-    decimalPlaces: 2
+    decimalPlaces: 0 // RON typically doesn't show decimals in UI
   },
   'DE': {
     symbol: '€',
@@ -44,6 +44,7 @@ export function getCurrencyForCountry(countryCode: string): CurrencyConfig {
 
 /**
  * Format price from RON cents to display value in appropriate currency
+ * Display in FULL UNITS not cents/bani
  */
 export function formatPrice(
   priceInRonCents: number | undefined | null,
@@ -66,33 +67,53 @@ export function formatPrice(
     style: 'currency',
     currency: currency.code,
     minimumFractionDigits: currency.decimalPlaces,
+    maximumFractionDigits: currency.decimalPlaces,
   }).format(priceInTargetCurrency);
 }
 
 /**
- * Parses user-entered price to RON cents
- * Accepts either RON units (e.g., 150) or already in cents (15000)
+ * Format a price for display without the currency symbol
+ * Useful for input fields when you want just the number
+ */
+export function formatPriceValue(
+  priceInRonCents: number | undefined | null,
+  countryCode: string = 'RO'
+): string {
+  if (priceInRonCents === undefined || priceInRonCents === null) {
+    return '';
+  }
+
+  const currency = getCurrencyForCountry(countryCode);
+  
+  // Convert from RON cents to RON units
+  const priceInRon = priceInRonCents / 100;
+  
+  // Convert to target currency
+  const priceInTargetCurrency = priceInRon * currency.exchangeRate;
+  
+  // Format as simple number with appropriate decimals
+  return priceInTargetCurrency.toFixed(currency.decimalPlaces);
+}
+
+/**
+ * Parses user-entered full units price to RON cents for storage
+ * INPUT is in FULL UNITS (e.g., 150 RON, not 15000 bani)
  */
 export function parsePrice(
   input: string | number,
-  countryCode: string = 'RO',
-  isInCents: boolean = false
-): number | null {
+  countryCode: string = 'RO'
+): number {
   const currency = getCurrencyForCountry(countryCode);
   const numericValue = typeof input === 'string' ? parseFloat(input) : input;
   
   if (isNaN(numericValue)) {
-    return null;
-  }
-
-  if (isInCents) {
-    return numericValue;
+    return 0;
   }
   
   // Convert from target currency to RON
   const valueInRon = numericValue / currency.exchangeRate;
   
-  // Convert to RON cents (for now we still store in cents in DB)
+  // Convert to RON cents for DB storage
   return Math.round(valueInRon * 100);
 }
 
@@ -119,4 +140,12 @@ export function getUserCurrencySymbol(): string {
   const country = getUserCountry();
   const currency = getCurrencyForCountry(country);
   return currency.symbol;
+}
+
+/**
+ * Get the full description for a currency
+ */
+export function getCurrencyDescription(countryCode: string = 'RO'): string {
+  const currency = getCurrencyForCountry(countryCode);
+  return `${currency.name} (${currency.symbol})`;
 }

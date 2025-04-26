@@ -58,9 +58,6 @@ export const specializations = pgTable("specializations", {
   name: text("name").notNull(),
 });
 
-// Currency enum
-export const currencyEnum = pgEnum('currency', ['RON', 'EUR', 'USD']);
-
 // Services table
 export const services = pgTable("services", {
   id: serial("id").primaryKey(),
@@ -68,10 +65,9 @@ export const services = pgTable("services", {
   title: text("title").notNull(),
   description: text("description"),
   priceType: text("price_type").notNull(), // fixed, hourly, percentage
-  price: integer("price"), // in full currency units (not cents anymore)
-  percentageRate: real("percentage_rate"), // stored as decimal (1.5 = 1.5%)
+  price: integer("price"), // in smallest currency unit (bani/cents)
+  percentageRate: integer("percentage_rate"), // stored as whole number (10 = 10%)
   minPrice: integer("min_price"), // minimum price for percentage-based services
-  currency: currencyEnum("currency").default('RON'), // currency for the price
 });
 
 // Bookings table
