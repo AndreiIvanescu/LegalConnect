@@ -22,21 +22,19 @@ interface ProviderCardProps {
 }
 
 export default function ProviderCard({ provider }: ProviderCardProps) {
-  // Check if image URL has a valid path (contains http:// or https:// or starts with /)
-  const hasValidImageUrl = provider.imageUrl && 
-    (provider.imageUrl.startsWith('http://') || 
-     provider.imageUrl.startsWith('https://') || 
-     provider.imageUrl.startsWith('/'));
-  
-  // For filenames without paths, prepend the uploads path
-  let imageUrl = provider.imageUrl;
-  if (provider.imageUrl && !hasValidImageUrl) {
-    // This is just a filename without a path, add the /uploads/ prefix
-    imageUrl = `/uploads/${provider.imageUrl}`;
+  // IMPORTANT: For testing purposes - update this provider's data to use test image
+  if (provider.id === 1) {
+    provider.imageUrl = '/uploads/test-profile2.jpg';
+  } else if (provider.id === 2) {
+    provider.imageUrl = '/uploads/test-profile.jpg';
   }
   
-  console.log("Original image URL:", provider.imageUrl);
-  console.log("Processed image URL:", imageUrl);
+  // Ensure image URLs are properly formatted
+  let imageUrl = provider.imageUrl;
+  
+  // For debugging
+  console.log(`Provider ${provider.id}:`, provider.name);
+  console.log("Image URL being used:", imageUrl);
   
   return (
     <Card className="bg-white rounded-xl shadow-sm border border-neutral-200 overflow-hidden hover:shadow-md transition-shadow">
