@@ -41,7 +41,8 @@ import {
 import { Shield, Award, MapPin, School, Languages, Clock } from 'lucide-react';
 
 // Extend the provider profile schema with additional validations
-const providerProfileSchema = insertProviderProfileSchema
+// Create a custom schema for the form that uses string for languages
+const providerProfileFormSchema = insertProviderProfileSchema
   .extend({
     description: z.string().min(50, {
       message: "Description must be at least 50 characters long",
@@ -49,6 +50,7 @@ const providerProfileSchema = insertProviderProfileSchema
     education: z.string().min(5, {
       message: "Education information is required",
     }),
+    // Use string for the form, we'll convert it to array before submission
     languages: z.string().min(2, {
       message: "Please provide spoken languages",
     }),
@@ -68,8 +70,8 @@ export default function ProfileSetupPage() {
   const { toast } = useToast();
   const [imagePreview, setImagePreview] = useState<string | null>(null);
 
-  const form = useForm<z.infer<typeof providerProfileSchema>>({
-    resolver: zodResolver(providerProfileSchema),
+  const form = useForm<z.infer<typeof providerProfileFormSchema>>({
+    resolver: zodResolver(providerProfileFormSchema),
     defaultValues: {
       userId: user?.id,
       providerType: 'notary',
@@ -88,7 +90,7 @@ export default function ProfileSetupPage() {
   });
 
   const mutation = useMutation({
-    mutationFn: async (data: z.infer<typeof providerProfileSchema>) => {
+    mutationFn: async (data: any) => {
       const response = await apiRequest('POST', '/api/profile/provider', data);
       return await response.json();
     },
@@ -108,7 +110,7 @@ export default function ProfileSetupPage() {
     },
   });
 
-  function onSubmit(data: z.infer<typeof providerProfileSchema>) {
+  function onSubmit(data: z.infer<typeof providerProfileFormSchema>) {
     // If location is provided but coordinates are missing, use geocoding here
     // For now, we'll use default coordinates for demonstration
     if (!data.latitude || !data.longitude) {
@@ -116,7 +118,14 @@ export default function ProfileSetupPage() {
       data.longitude = 26.1025; // Bucharest longitude
     }
     
-    mutation.mutate(data);
+    // Convert languages from string to array before submission
+    const formattedData = {
+      ...data,
+      // Split the comma-separated languages string into an array
+      languages: data.languages.split(',').map(lang => lang.trim())
+    };
+    
+    mutation.mutate(formattedData);
   }
 
   return (
