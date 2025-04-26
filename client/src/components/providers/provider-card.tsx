@@ -22,14 +22,7 @@ interface ProviderCardProps {
 }
 
 export default function ProviderCard({ provider }: ProviderCardProps) {
-  // IMPORTANT: For testing purposes - update this provider's data to use test image
-  if (provider.id === 1) {
-    provider.imageUrl = '/uploads/test-profile2.jpg';
-  } else if (provider.id === 2) {
-    provider.imageUrl = '/uploads/test-profile.jpg';
-  }
-  
-  // Ensure image URLs are properly formatted
+  // Ensure image URLs are properly formatted - use the image uploaded by the user
   let imageUrl = provider.imageUrl;
   
   // For debugging
