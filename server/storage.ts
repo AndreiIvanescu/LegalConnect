@@ -104,15 +104,132 @@ export class DatabaseStorage implements IStorage {
 
   // Provider methods
   async getAllProviders(): Promise<any[]> {
-    return db.select().from(providerProfiles);
+    try {
+      // Get provider profiles
+      const profiles = await db.select().from(providerProfiles);
+      
+      // If we don't have any profiles yet, return empty array to avoid further errors
+      if (!profiles || profiles.length === 0) {
+        return [];
+      }
+      
+      // Fetch additional data for each profile
+      const providersWithDetails = await Promise.all(profiles.map(async (profile) => {
+        try {
+          // Get user data
+          const [userData] = await db.select().from(users).where(eq(users.id, profile.userId));
+          
+          // Get specializations
+          const specializationsList = await db.select().from(specializations)
+            .where(eq(specializations.providerId, profile.id));
+          
+          // Get services
+          const servicesList = await db.select().from(services)
+            .where(eq(services.providerId, profile.id));
+          
+          // Calculate rating based on reviews
+          const reviews = await db.select().from(reviews)
+            .where(eq(reviews.revieweeId, profile.userId));
+          
+          const avgRating = reviews.length > 0 
+            ? reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length 
+            : 0;
+          
+          // Format the provider data for the client
+          return {
+            id: profile.id,
+            name: userData?.fullName || 'Unknown Provider',
+            type: profile.providerType,
+            rating: avgRating,
+            reviewCount: reviews.length,
+            location: profile.location || 'Unknown',
+            education: profile.education || '',
+            specializations: specializationsList.map(s => s.name),
+            startingPrice: servicesList.length > 0 
+              ? `${Math.min(...servicesList.map(s => s.price || 0)) / 100} RON`
+              : 'Contact for pricing',
+            isTopRated: profile.isTopRated,
+            isAvailable24_7: profile.is24_7,
+            imageUrl: userData?.avatar || '/placeholder-avatar.jpg',
+            latitude: profile.latitude,
+            longitude: profile.longitude,
+            serviceRadius: profile.serviceRadius
+          };
+        } catch (error) {
+          console.error(`Error processing provider profile ${profile.id}:`, error);
+          return null; // Skip this provider on error
+        }
+      }));
+      
+      // Filter out any null entries from failed processing
+      return providersWithDetails.filter(provider => provider !== null);
+    } catch (error) {
+      console.error("Error in getAllProviders:", error);
+      return []; // Return empty array on error
+    }
   }
 
   async getProvider(id: number): Promise<any | undefined> {
-    const [profile] = await db
-      .select()
-      .from(providerProfiles)
-      .where(eq(providerProfiles.id, id));
-    return profile || undefined;
+    try {
+      // Get provider profile
+      const [profile] = await db
+        .select()
+        .from(providerProfiles)
+        .where(eq(providerProfiles.id, id));
+      
+      if (!profile) {
+        return undefined;
+      }
+      
+      // Get user data
+      const [userData] = await db.select().from(users).where(eq(users.id, profile.userId));
+      
+      // Get specializations
+      const specializationsList = await db.select().from(specializations)
+        .where(eq(specializations.providerId, profile.id));
+      
+      // Get services
+      const servicesList = await db.select().from(services)
+        .where(eq(services.providerId, profile.id));
+      
+      // Calculate rating based on reviews
+      const reviews = await db.select().from(reviews)
+        .where(eq(reviews.revieweeId, profile.userId));
+      
+      const avgRating = reviews.length > 0 
+        ? reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length 
+        : 0;
+      
+      // Format the provider data for the client
+      return {
+        id: profile.id,
+        name: userData?.fullName || 'Unknown Provider',
+        type: profile.providerType,
+        rating: avgRating,
+        reviewCount: reviews.length,
+        location: profile.location || 'Unknown',
+        education: profile.education || '',
+        description: profile.description || '',
+        languages: profile.languages || [],
+        specializations: specializationsList.map(s => s.name),
+        services: servicesList,
+        startingPrice: servicesList.length > 0 
+          ? `${Math.min(...servicesList.map(s => s.price || 0)) / 100} RON`
+          : 'Contact for pricing',
+        isTopRated: profile.isTopRated,
+        isAvailable24_7: profile.is24_7,
+        completedServices: profile.completedServices,
+        imageUrl: userData?.avatar || '/placeholder-avatar.jpg',
+        workingHours: profile.workingHours,
+        latitude: profile.latitude,
+        longitude: profile.longitude,
+        serviceRadius: profile.serviceRadius,
+        userId: profile.userId
+      };
+    } catch (error) {
+      console.error("Error in getProvider:", error);
+      return undefined;
+    }
   }
 
   async getProviderProfileByUserId(userId: number): Promise<ProviderProfile | undefined> {

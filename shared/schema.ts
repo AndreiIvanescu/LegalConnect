@@ -2,24 +2,8 @@ import { pgTable, text, serial, integer, boolean, timestamp, json, uniqueIndex, 
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-// Create custom PostGIS types since they're not directly available in drizzle-orm
-const geography = customType<{ data: string }>({
-  dataType() {
-    return 'geography(Point, 4326)';
-  },
-  toDriver(value: string): string {
-    return value;
-  },
-});
-
-const point = customType<{ data: string }>({
-  dataType() {
-    return 'point';
-  },
-  toDriver(value: string): string {
-    return value;
-  },
-});
+// We'll implement PostGIS manually through SQL functions for geospatial queries
+// This approach allows for better control and avoids issues with Drizzle ORM custom types
 
 // Enum for user roles
 export const userRoleEnum = pgEnum('user_role', ['client', 'provider']);
@@ -54,10 +38,9 @@ export const providerProfiles = pgTable("provider_profiles", {
   languages: text("languages").array(),
   location: text("location"),
   address: text("address"),
-  // Geographic location (PostGIS)
+  // Geographic location (simple coordinates for now)
   latitude: real("latitude"),
   longitude: real("longitude"),
-  geolocation: geography("geolocation", { srid: 4326 }), // SRID 4326 is the standard for GPS coordinates
   // Search radius in meters
   serviceRadius: integer("service_radius"),
   workingHours: json("working_hours"),
