@@ -139,6 +139,28 @@ export function setupAuth(app: Express) {
       res.sendStatus(200);
     });
   });
+  
+  app.delete("/api/user", async (req, res, next) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+      
+      const userId = req.user.id;
+      
+      // Delete the user from the database
+      await storage.deleteUser(userId);
+      
+      // Log the user out after successful deletion
+      req.logout((err) => {
+        if (err) return next(err);
+        res.status(200).json({ message: "Account deleted successfully" });
+      });
+    } catch (error) {
+      console.error("Error deleting user:", error);
+      res.status(500).json({ message: "Failed to delete account" });
+    }
+  });
 
   app.get("/api/user", (req, res) => {
     if (!req.isAuthenticated()) {

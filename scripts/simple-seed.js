@@ -1,6 +1,18 @@
-import { db } from '../server/db.js';
-import { users, providerProfiles, services, specializations, reviews } from '../shared/schema.js';
+import { Pool, neonConfig } from '@neondatabase/serverless';
+import { drizzle } from 'drizzle-orm/neon-serverless';
 import { eq } from 'drizzle-orm';
+import ws from 'ws';
+import * as schema from '../shared/schema.js';
+
+// Configure neon database connection
+neonConfig.webSocketConstructor = ws;
+
+// Create database connection
+const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+const db = drizzle({ client: pool, schema });
+
+// Extract schema entities
+const { users, providerProfiles, services, specializations, reviews } = schema;
 
 // Sample provider data
 const providers = [
