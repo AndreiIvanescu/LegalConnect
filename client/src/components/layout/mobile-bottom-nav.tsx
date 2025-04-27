@@ -1,25 +1,31 @@
 import { Link, useLocation } from "wouter";
 import { Search, Calendar, MessageSquare, User } from "lucide-react";
-
+import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { FilePlus, Briefcase } from "lucide-react";
 
 export default function MobileBottomNav() {
   const [location] = useLocation();
   const { user } = useAuth();
+  // Use state to track the provider status for more reliable re-rendering
+  const [isProvider, setIsProvider] = useState(false);
   
-  // Force re-render to ensure the user role is correctly applied
-  // This ensures the navigation updates when user data changes
-  const isProvider = user?.role === 'provider';
+  // Use effect to update provider status whenever user changes
+  useEffect(() => {
+    // Check if user role is provider
+    const providerCheck = user?.role === 'provider';
+    console.log("MobileNav useEffect - User:", user?.username, "Role:", user?.role, "Is Provider:", providerCheck);
+    setIsProvider(providerCheck);
+  }, [user]);
   
-  // Debug log to check what's happening with user role
-  console.log("Mobile Nav - User Role:", user?.role, "Is Provider:", isProvider);
+  // Always log current values for debugging
+  console.log("MobileNav render - Username:", user?.username, "Role:", user?.role, "Is Provider state:", isProvider);
   
   return (
     <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white shadow-lg border-t border-neutral-200 z-50">
       <div className="flex justify-around">
-        {isProvider ? (
-          // Provider navigation
+        {isProvider && (
+          // PROVIDER NAVIGATION - shown only if user is a provider
           <>
             <Link href="/find-contracts" className={`flex flex-col items-center py-3 transition-all ${location === '/find-contracts' ? 'text-primary font-medium scale-105' : 'text-neutral-500'}`}>
                 <Search className={`h-5 w-5 transition-transform ${location === '/find-contracts' ? 'scale-110' : ''}`} />
@@ -30,8 +36,10 @@ export default function MobileBottomNav() {
                 <span className="text-xs mt-1">Applications</span>
             </Link>
           </>
-        ) : (
-          // Client navigation
+        )}
+        
+        {!isProvider && (
+          // CLIENT NAVIGATION - shown only if user is a client
           <>
             <Link href="/" className={`flex flex-col items-center py-3 transition-all ${location === '/' ? 'text-primary font-medium scale-105' : 'text-neutral-500'}`}>
                 <Search className={`h-5 w-5 transition-transform ${location === '/' ? 'scale-110' : ''}`} />
@@ -47,6 +55,8 @@ export default function MobileBottomNav() {
             </Link>
           </>
         )}
+        
+        {/* Common navigation items for all users */}
         <Link href="/messages" className={`flex flex-col items-center py-3 transition-all ${location === '/messages' ? 'text-primary font-medium scale-105' : 'text-neutral-500'}`}>
             <MessageSquare className={`h-5 w-5 transition-transform ${location === '/messages' ? 'scale-110' : ''}`} />
             <span className="text-xs mt-1">Messages</span>

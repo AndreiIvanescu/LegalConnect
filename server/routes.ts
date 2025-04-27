@@ -756,11 +756,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Get applications submitted by provider
   app.get("/api/job-applications/my", async (req, res) => {
-    if (!req.isAuthenticated() || req.user.role !== 'provider') {
-      return res.status(403).json({ message: "Only providers can access this endpoint" });
+    // Important fix: if not authenticated, return empty array instead of 403
+    if (!req.isAuthenticated()) {
+      console.log("User not authenticated, returning empty applications array");
+      return res.json([]);
+    }
+    
+    // If user is not a provider, also return empty array instead of 403
+    if (req.user.role !== 'provider') {
+      console.log(`User ${req.user.id} has role ${req.user.role}, not provider. Returning empty applications array`);
+      return res.json([]);
     }
 
     try {
+      console.log(`Getting applications for user ID ${req.user.id} with role ${req.user.role}`);
       const providerProfile = await storage.getProviderProfileByUserId(req.user.id);
       
       if (!providerProfile) {
@@ -769,9 +778,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.json([]);
       }
       
-      console.log(`Getting applications for provider ID ${providerProfile.id}`);
+      console.log(`Provider profile found with ID ${providerProfile.id}, fetching applications`);
       const applications = await storage.getJobApplicationsByProviderId(providerProfile.id);
-      console.log(`Found ${applications.length} applications`);
+      console.log(`Found ${applications.length} applications for provider ${providerProfile.id}`);
       res.json(applications);
     } catch (error) {
       console.error("Error fetching job applications:", error);
