@@ -715,7 +715,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     try {
       const jobPostings = await storage.getJobPostingsByClientId(req.user.id);
-      res.json(jobPostings);
+      
+      // Add frontend-specific fields for rendering in the UI
+      const enhancedJobPostings = jobPostings.map(job => {
+        const budgetInRON = Math.round((job.budget || 0) / 100);
+        return {
+          ...job,
+          // Add budgetMin and budgetMax fields for the frontend
+          // For simplicity, we'll set budgetMin to 80% of budget and budgetMax to the budget
+          // In a real implementation, these would be stored separately
+          budgetMin: Math.round(budgetInRON * 0.8),
+          budgetMax: budgetInRON,
+        };
+      });
+      
+      res.json(enhancedJobPostings);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch job postings" });
     }
@@ -731,7 +745,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Job posting not found" });
       }
       
-      res.json(jobPosting);
+      // Add budgetMin and budgetMax for the frontend, similar to the /api/jobs/my endpoint
+      const budgetInRON = Math.round((jobPosting.budget || 0) / 100);
+      const enhancedJob = {
+        ...jobPosting,
+        budgetMin: Math.round(budgetInRON * 0.8),
+        budgetMax: budgetInRON,
+      };
+      
+      res.json(enhancedJob);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch job posting" });
     }

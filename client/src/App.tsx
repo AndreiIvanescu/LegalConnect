@@ -13,6 +13,7 @@ import ProviderDashboard from "@/pages/provider-dashboard";
 import JobPostingPage from "@/pages/job-posting-page";
 import JobBoardPage from "@/pages/job-board-page";
 import PostGigPage from "@/pages/post-gig-page";
+import EditGigPage from "@/pages/edit-gig-page";
 import MyGigsPage from "@/pages/my-gigs-page";
 import FindContractsPage from "@/pages/find-contracts-page";
 import MyApplicationsPage from "@/pages/my-applications-page";
@@ -43,6 +44,7 @@ function Router() {
       
       {/* Client-specific routes */}
       <ProtectedRoute path="/post-gig" component={PostGigPage} />
+      <ProtectedRoute path="/edit-gig/:id" component={EditGigPage} />
       <ProtectedRoute path="/my-gigs" component={MyGigsPage} />
       <ProtectedRoute path="/jobs" component={JobPostingPage} />
       <ProtectedRoute path="/job-board" component={JobBoardPage} />
