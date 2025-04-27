@@ -98,26 +98,40 @@ export default function PostGigPage() {
   // Create mutation for submitting the gig
   const mutation = useMutation({
     mutationFn: async (data: PostGigFormValues) => {
-      // Handle file uploads first if needed
-      let attachments: string[] = [];
-      
-      if (selectedFiles.length > 0) {
-        // For now, we'll just collect the file names as a placeholder
-        // In a real implementation, you'd upload these files to your server
-        attachments = selectedFiles.map(file => file.name);
-      }
-      
-      // Combine form data with attachments
-      const gigData = {
-        ...data,
-        attachments,
-        // Convert budgets to numbers for storage
-        budgetMin: parseFloat(data.budgetMin),
-        budgetMax: parseFloat(data.budgetMax),
-      };
+      try {
+        // Handle file uploads first if needed
+        let attachments: string[] = [];
+        
+        if (selectedFiles.length > 0) {
+          // For now, we'll just collect the file names as a placeholder
+          // In a real implementation, you'd upload these files to your server
+          attachments = selectedFiles.map(file => file.name);
+        }
+        
+        // Combine form data with attachments
+        const gigData = {
+          ...data,
+          attachments,
+          // Convert budgets to numbers for storage
+          budgetMin: parseFloat(data.budgetMin),
+          budgetMax: parseFloat(data.budgetMax),
+        };
 
-      const response = await apiRequest("POST", "/api/gigs", gigData);
-      return response.json();
+        const response = await apiRequest("POST", "/api/gigs", gigData);
+        
+        // Check if response is valid JSON
+        const contentType = response.headers.get("content-type");
+        if (!contentType || !contentType.includes("application/json")) {
+          // Get the text to show a better error message
+          const text = await response.text();
+          throw new Error(`Server returned invalid format: ${text.substring(0, 50)}...`);
+        }
+        
+        return await response.json();
+      } catch (error) {
+        console.error("Error posting gig:", error);
+        throw new Error(error instanceof Error ? error.message : "Failed to post your gig. Please try again.");
+      }
     },
     onSuccess: () => {
       // Show success message
