@@ -87,9 +87,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await apiRequest("POST", "/api/logout");
     },
     onSuccess: () => {
-      // Reset all query cache on logout
+      // Reset all query cache and set user to null
       queryClient.clear();
-      navigate("/");
+      queryClient.setQueryData(["/api/user"], null);
+      navigate("/auth");
       toast({
         title: "Logged out successfully",
       });
