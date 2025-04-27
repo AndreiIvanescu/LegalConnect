@@ -140,7 +140,7 @@ export default function FindContractsPage() {
         description: "Your application has been sent to the client. You will be notified if they accept.",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/gigs"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/users/me/applications"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/job-applications/my"] });
       setDialogOpen(false);
       setProposalMessage("");
       setCustomRate("");

@@ -75,9 +75,9 @@ export default function MyApplicationsPage() {
   
   // Fetch user's applications
   const { data: applications, isLoading, isError } = useQuery<Application[]>({
-    queryKey: ["/api/users/me/applications"],
+    queryKey: ["/api/job-applications/my"],
     queryFn: async () => {
-      const response = await apiRequest("GET", "/api/users/me/applications");
+      const response = await apiRequest("GET", "/api/job-applications/my");
       return response.json();
     }
   });
