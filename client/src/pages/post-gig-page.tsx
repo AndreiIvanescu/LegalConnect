@@ -108,13 +108,19 @@ export default function PostGigPage() {
           attachments = selectedFiles.map(file => file.name);
         }
         
-        // Combine form data with attachments
+        // Combine form data with attachments and map to the expected server schema fields
         const gigData = {
-          ...data,
-          attachments,
-          // Convert budgets to numbers for storage
+          title: data.title,
+          description: data.description,
+          providerType: data.category, // Map category to providerType
+          priceType: "fixed", // Default to fixed price
+          budget: parseFloat(data.budgetMax) * 100, // Convert to smallest currency unit (bani)
+          location: data.location,
+          urgency: data.urgency,
+          // Include other client-side specific data that we'll handle in frontend
           budgetMin: parseFloat(data.budgetMin),
           budgetMax: parseFloat(data.budgetMax),
+          attachments,
         };
 
         const response = await apiRequest("POST", "/api/jobs", gigData);

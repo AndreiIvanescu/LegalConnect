@@ -572,15 +572,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
     
     try {
-      const validatedData = insertJobPostingSchema.parse({
-        ...req.body,
+      // Manually map the form fields to match the expected schema
+      const data = {
+        title: req.body.title,
+        description: req.body.description,
+        providerType: req.body.providerType || req.body.category, // Accept either field
+        priceType: req.body.priceType || 'fixed', // Default to fixed
+        // Use budget directly if provided, or calculate from min/max
+        budget: req.body.budget || 
+                (req.body.budgetMax ? parseInt(String(req.body.budgetMax)) * 100 : 0),
+        location: req.body.location,
+        urgency: req.body.urgency,
+        deadline: req.body.specificDate,
         clientId: req.user.id,
         status: 'open',
-      });
+      };
+      
+      // Validate transformed data
+      const validatedData = insertJobPostingSchema.parse(data);
       
       const jobPosting = await storage.createJobPosting(validatedData);
       res.status(201).json(jobPosting);
     } catch (error) {
+      console.error("Error creating job posting:", error);
       res.status(400).json({ message: error instanceof Error ? error.message : "Invalid data" });
     }
   });
@@ -666,14 +680,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
 
     try {
-      const validatedData = insertJobPostingSchema.parse({
-        ...req.body,
-        clientId: req.user.id
-      });
+      // Manually map the form fields to match the expected schema
+      const data = {
+        title: req.body.title,
+        description: req.body.description,
+        providerType: req.body.providerType || req.body.category, // Accept either field
+        priceType: req.body.priceType || 'fixed', // Default to fixed
+        // Use budget directly if provided, or calculate from min/max
+        budget: req.body.budget || 
+                (req.body.budgetMax ? parseInt(String(req.body.budgetMax)) * 100 : 0),
+        location: req.body.location,
+        urgency: req.body.urgency,
+        deadline: req.body.specificDate,
+        clientId: req.user.id,
+        status: 'open',
+      };
+      
+      // Validate transformed data
+      const validatedData = insertJobPostingSchema.parse(data);
       
       const jobPosting = await storage.createJobPosting(validatedData);
       res.status(201).json(jobPosting);
     } catch (error) {
+      console.error("Error creating job posting:", error);
       res.status(400).json({ message: error instanceof Error ? error.message : "Invalid data" });
     }
   });
