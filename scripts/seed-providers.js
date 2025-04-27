@@ -1,9 +1,15 @@
-const fs = require('fs');
-const path = require('path');
-const fetch = require('node-fetch');
-const { db } = require('../server/db');
-const { users, providerProfiles, services, specializations, reviews } = require('../shared/schema');
-const { eq } = require('drizzle-orm');
+import fs from 'fs';
+import path from 'path';
+import fetch from 'node-fetch';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+import { db } from '../server/db.js';
+import { users, providerProfiles, services, specializations as specializationsTable, reviews } from '../shared/schema.js';
+import { eq } from 'drizzle-orm';
+
+// Get current module path in ESM
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 // Ensure uploads directory exists
 const uploadsDir = path.join(__dirname, '../public/uploads');
@@ -575,7 +581,7 @@ async function seedProviders() {
       
       // Add specializations
       for (const spec of provider.profileData.specializations) {
-        await db.insert(specializations).values({
+        await db.insert(specializationsTable).values({
           providerId: profile.id,
           name: spec
         });
