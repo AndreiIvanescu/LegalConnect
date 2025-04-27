@@ -116,7 +116,7 @@ export default function PostGigPage() {
         budgetMax: parseFloat(data.budgetMax),
       };
 
-      const response = await apiRequest("POST", "/api/jobs", gigData);
+      const response = await apiRequest("POST", "/api/gigs", gigData);
       return response.json();
     },
     onSuccess: () => {

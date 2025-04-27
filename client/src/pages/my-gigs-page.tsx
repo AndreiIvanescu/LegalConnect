@@ -80,7 +80,7 @@ export default function MyGigsPage() {
   const { data: gigs, isLoading, isError } = useQuery<Gig[]>({
     queryKey: ["/api/users/me/gigs"],
     queryFn: async () => {
-      const response = await apiRequest("GET", "/api/jobs/client");
+      const response = await apiRequest("GET", "/api/users/me/gigs");
       return response.json();
     }
   });
@@ -88,7 +88,7 @@ export default function MyGigsPage() {
   // Delete gig mutation
   const deleteMutation = useMutation({
     mutationFn: async (gigId: number) => {
-      await apiRequest("DELETE", `/api/jobs/${gigId}`);
+      await apiRequest("DELETE", `/api/gigs/${gigId}`);
     },
     onSuccess: () => {
       toast({

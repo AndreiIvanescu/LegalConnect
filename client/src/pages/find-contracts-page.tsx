@@ -118,7 +118,7 @@ export default function FindContractsPage() {
       
       params.append("status", "open");
       
-      const url = `/api/jobs/by-type/${category || 'all'}${params.toString() ? `?${params.toString()}` : ''}`;
+      const url = `/api/gigs${params.toString() ? `?${params.toString()}` : ''}`;
       const response = await apiRequest("GET", url);
       return response.json();
     }
@@ -132,7 +132,7 @@ export default function FindContractsPage() {
         ...(rate && { customRate: parseFloat(rate) })
       };
       
-      await apiRequest("POST", `/api/jobs/${gigId}/apply`, data);
+      await apiRequest("POST", `/api/gigs/${gigId}/applications`, data);
     },
     onSuccess: () => {
       toast({
