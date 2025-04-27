@@ -27,6 +27,7 @@ export interface IStorage {
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   updateUser(id: number, data: Partial<User>): Promise<User>;
+  deleteUser(id: number): Promise<void>;
   
   // Provider methods
   getAllProviders(): Promise<any[]>;
@@ -160,6 +161,68 @@ export class DatabaseStorage implements IStorage {
     }
     
     return updatedUser;
+  }
+  
+  async deleteUser(id: number): Promise<void> {
+    try {
+      // First, check if the user exists
+      const user = await this.getUser(id);
+      if (!user) {
+        throw new Error("User not found");
+      }
+      
+      // Delete any provider profile if it exists
+      if (user.role === 'provider') {
+        const profile = await this.getProviderProfileByUserId(id);
+        if (profile) {
+          // Delete provider's services
+          const providerServices = await this.getServicesByProviderId(profile.id);
+          for (const service of providerServices) {
+            await db.delete(services).where(eq(services.id, service.id));
+          }
+          
+          // Delete provider's specializations
+          await db.delete(specializations).where(eq(specializations.providerId, profile.id));
+          
+          // Delete provider profile
+          await db.delete(providerProfiles).where(eq(providerProfiles.userId, id));
+        }
+      }
+      
+      // Delete messages
+      await db.delete(messages).where(eq(messages.senderId, id));
+      await db.delete(messages).where(eq(messages.recipientId, id));
+      
+      // Delete reviews
+      await db.delete(reviews).where(eq(reviews.reviewerId, id));
+      await db.delete(reviews).where(eq(reviews.revieweeId, id));
+      
+      // Delete job applications
+      if (user.role === 'provider') {
+        await db.delete(jobApplications).where(eq(jobApplications.providerId, id));
+      }
+      
+      // Delete job postings
+      if (user.role === 'client') {
+        await db.delete(jobPostings).where(eq(jobPostings.clientId, id));
+      }
+      
+      // Delete bookings
+      await db.delete(bookings).where(eq(bookings.clientId, id));
+      if (user.role === 'provider') {
+        // Find provider profile id first
+        const profile = await this.getProviderProfileByUserId(id);
+        if (profile) {
+          await db.delete(bookings).where(eq(bookings.providerId, profile.id));
+        }
+      }
+      
+      // Finally, delete the user
+      await db.delete(users).where(eq(users.id, id));
+    } catch (error) {
+      console.error("Error deleting user:", error);
+      throw error;
+    }
   }
 
   // Provider methods

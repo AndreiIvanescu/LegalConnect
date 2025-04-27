@@ -17,6 +17,7 @@ type AuthContextType = {
   loginMutation: UseMutationResult<SelectUser, Error, LoginData>;
   logoutMutation: UseMutationResult<void, Error, void>;
   registerMutation: UseMutationResult<SelectUser, Error, InsertUser>;
+  deleteAccountMutation: UseMutationResult<void, Error, void>;
 };
 
 type LoginData = z.infer<typeof loginSchema>;
@@ -100,6 +101,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
     },
   });
+  
+  const deleteAccountMutation = useMutation({
+    mutationFn: async () => {
+      await apiRequest("DELETE", "/api/user");
+    },
+    onSuccess: () => {
+      queryClient.setQueryData(["/api/user"], null);
+      navigate("/");
+      toast({
+        title: "Account deleted",
+        description: "Your account has been permanently deleted.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Failed to delete account",
+        description: error.message || "There was an error deleting your account. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
 
   return (
     <AuthContext.Provider
@@ -110,6 +132,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         loginMutation,
         logoutMutation,
         registerMutation,
+        deleteAccountMutation,
       }}
     >
       {children}

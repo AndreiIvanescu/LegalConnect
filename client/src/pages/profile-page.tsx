@@ -16,9 +16,20 @@ import MobileHeader from "@/components/layout/mobile-header";
 import DesktopHeader from "@/components/layout/desktop-header";
 import MobileBottomNav from "@/components/layout/mobile-bottom-nav";
 import { useLocation } from "wouter";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 export default function ProfilePage() {
-  const { user, logoutMutation } = useAuth();
+  const { user, logoutMutation, deleteAccountMutation } = useAuth();
   const { toast } = useToast();
   const [location, navigate] = useLocation();
   const [activeTab, setActiveTab] = useState("profile");
@@ -505,7 +516,29 @@ export default function ProfilePage() {
                           Permanently delete your account and all of your content from LegalMarket.
                           This action cannot be undone.
                         </p>
-                        <Button variant="destructive">Delete Account</Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="destructive">Delete Account</Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                This action cannot be undone. This will permanently delete your
+                                account and remove all your data from our servers.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction 
+                                onClick={() => deleteAccountMutation.mutate()} 
+                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                              >
+                                Delete Account
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
                       </div>
                     </div>
                   )}
