@@ -14,19 +14,12 @@ export default function MobileBottomNav() {
   const [location] = useLocation();
   const { user, logoutMutation } = useAuth();
   const [, navigate] = useLocation();
-  // Use state to track the provider status for more reliable re-rendering
-  const [isProvider, setIsProvider] = useState(false);
   
-  // Use effect to update provider status whenever user changes
-  useEffect(() => {
-    // Check if user role is provider
-    const providerCheck = user?.role === 'provider';
-    console.log("MobileNav useEffect - User:", user?.username, "Role:", user?.role, "Is Provider:", providerCheck);
-    setIsProvider(providerCheck);
-  }, [user]);
+  // Directly check if the user is a provider without using state
+  const isProvider = user?.role === 'provider';
   
-  // Always log current values for debugging
-  console.log("MobileNav render - Username:", user?.username, "Role:", user?.role, "Is Provider state:", isProvider);
+  // Log for debugging
+  console.log("MobileNav render - Username:", user?.username, "Role:", user?.role, "Is Provider:", isProvider);
   
   const handleLogout = () => {
     logoutMutation.mutate();

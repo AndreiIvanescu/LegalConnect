@@ -18,6 +18,7 @@ import FindContractsPage from "@/pages/find-contracts-page";
 import MyApplicationsPage from "@/pages/my-applications-page";
 import { ProtectedRoute } from "./lib/protected-route";
 import AuthAwareHeader from "@/components/layout/auth-aware-header";
+import MobileBottomNav from "@/components/layout/mobile-bottom-nav";
 import { useAuth } from "@/hooks/use-auth";
 
 function Router() {
@@ -56,9 +57,10 @@ function App() {
     <TooltipProvider>
       <div className="relative min-h-screen flex flex-col">
         <AuthAwareHeader />
-        <main className="flex-1">
+        <main className="flex-1 pb-16 md:pb-0">
           <Router />
         </main>
+        <MobileBottomNav />
         <Toaster />
       </div>
     </TooltipProvider>
