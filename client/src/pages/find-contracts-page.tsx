@@ -85,9 +85,12 @@ export default function FindContractsPage() {
     return null;
   }
   
+  // Get provider type from user profile
+  const providerType = user?.providerType || 'lawyer'; // Default to lawyer if not set
+  
   // Fetch gigs
   const { data: gigs, isLoading, isError } = useQuery<Gig[]>({
-    queryKey: ["/api/gigs", { searchTerm, category, budgetMin, budgetMax, urgency, onlyNearby }],
+    queryKey: [`/api/jobs/provider-type/${providerType}`, { searchTerm, category, budgetMin, budgetMax, urgency, onlyNearby }],
     queryFn: async () => {
       // Build query params
       const params = new URLSearchParams();
@@ -118,7 +121,8 @@ export default function FindContractsPage() {
       
       params.append("status", "open");
       
-      const url = `/api/gigs${params.toString() ? `?${params.toString()}` : ''}`;
+      // Use the correct endpoint for job postings instead of gigs
+      const url = `/api/jobs/provider-type/${providerType}${params.toString() ? `?${params.toString()}` : ''}`;
       const response = await apiRequest("GET", url);
       return response.json();
     }
@@ -132,14 +136,14 @@ export default function FindContractsPage() {
         ...(rate && { customRate: parseFloat(rate) })
       };
       
-      await apiRequest("POST", `/api/gigs/${gigId}/applications`, data);
+      await apiRequest("POST", `/api/jobs/${gigId}/applications`, data);
     },
     onSuccess: () => {
       toast({
         title: "Application Sent",
         description: "Your application has been sent to the client. You will be notified if they accept.",
       });
-      queryClient.invalidateQueries({ queryKey: ["/api/gigs"] });
+      queryClient.invalidateQueries({ queryKey: [`/api/jobs/provider-type/${providerType}`] });
       queryClient.invalidateQueries({ queryKey: ["/api/job-applications/my"] });
       setDialogOpen(false);
       setProposalMessage("");
@@ -195,7 +199,7 @@ export default function FindContractsPage() {
             <CardDescription>Failed to load available contracts. Please try again later.</CardDescription>
           </CardHeader>
           <CardFooter>
-            <Button onClick={() => queryClient.invalidateQueries({ queryKey: ["/api/gigs"] })}>
+            <Button onClick={() => queryClient.invalidateQueries({ queryKey: [`/api/jobs/provider-type/${providerType}`] })}>
               Retry
             </Button>
           </CardFooter>
@@ -315,7 +319,7 @@ export default function FindContractsPage() {
             </Button>
             <Button onClick={() => {
               // Force refresh with current filters
-              queryClient.invalidateQueries({ queryKey: ["/api/gigs"] });
+              queryClient.invalidateQueries({ queryKey: [`/api/jobs/provider-type/${providerType}`] });
             }} className="bg-primary hover:bg-primary/90">
               Apply Filters
             </Button>
@@ -345,7 +349,7 @@ export default function FindContractsPage() {
                 setOnlyNearby(false);
                 
                 // Force refresh
-                queryClient.invalidateQueries({ queryKey: ["/api/gigs"] });
+                queryClient.invalidateQueries({ queryKey: [`/api/jobs/provider-type/${providerType}`] });
               }}>
               Clear Filters
             </Button>
