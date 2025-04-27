@@ -101,6 +101,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get current provider's profile
+  app.get("/api/providers/me/profile", async (req, res) => {
+    if (!req.isAuthenticated() || req.user.role !== 'provider') {
+      return res.status(403).json({ message: "Only providers can access their profiles" });
+    }
+    
+    try {
+      const providerProfile = await storage.getProviderProfileByUserId(req.user.id);
+      
+      if (!providerProfile) {
+        return res.status(404).json({ message: "Provider profile not found" });
+      }
+      
+      res.json(providerProfile);
+    } catch (error) {
+      res.status(500).json({ message: error instanceof Error ? error.message : "Failed to fetch provider profile" });
+    }
+  });
+
   // Get provider by ID
   app.get("/api/providers/:id", async (req, res) => {
     try {

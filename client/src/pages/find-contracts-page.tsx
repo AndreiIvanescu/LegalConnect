@@ -85,8 +85,17 @@ export default function FindContractsPage() {
     return null;
   }
   
-  // Get provider type from user profile
-  const providerType = user?.providerType || 'lawyer'; // Default to lawyer if not set
+  // Fetch provider profile to get provider type
+  const { data: providerProfile } = useQuery({
+    queryKey: ['/api/profile/provider'],
+    queryFn: async () => {
+      const response = await apiRequest("GET", "/api/profile/provider");
+      return response.json();
+    },
+  });
+  
+  // Get provider type from profile or default to 'lawyer'
+  const providerType = providerProfile?.providerType || 'lawyer';
   
   // Fetch gigs
   const { data: gigs, isLoading, isError } = useQuery<Gig[]>({
