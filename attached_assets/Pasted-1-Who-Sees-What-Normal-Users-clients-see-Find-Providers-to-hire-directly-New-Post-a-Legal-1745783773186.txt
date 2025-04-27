@@ -1,0 +1,141 @@
+1. Who Sees What
+Normal Users (clients) see:
+
+“Find Providers” (to hire directly)
+
+New “Post a Legal Gig” (to request help)
+
+“My Gigs” (their own requests)
+
+Legal Providers (role = Lawyer/Notary/Executor/Judge) see:
+
+Renamed “Find Providers” → “Find Contracts”
+
+This screen now shows client-posted gigs instead of provider profiles
+
+“My Profile,” “Bookings,” “My Applications,” etc.
+
+They do not see “Post a Legal Gig” at all
+
+2. Client-Side Changes (React Native)
+A. New “Post a Legal Gig” Screen
+Add Button
+
+On your bottom tab or header menu for clients, add a “Post a Legal Gig” button/icon.
+
+Form Fields
+
+Title (TextInput)
+
+Category (Picker): Notary, Executor, Lawyer, Judge
+
+Description (TextInput multiline)
+
+Budget Min/Max (two numeric TextInputs)
+
+Urgency (RadioButtons or Picker): ASAP, Within 24 h, Specific Date (DatePicker)
+
+Location (TextInput with autocomplete + small MapView to drop a pin)
+
+Attachments (ImagePicker / DocumentPicker)
+
+Submit Flow
+
+On press “Submit Gig,” validate fields, call POST /api/gigs, then navigate to “My Gigs.”
+
+Show a Toast or Alert “Your gig is live—providers will apply soon!”
+
+B. “My Gigs” Screen
+Under the client’s side menu, add “My Gigs.”
+
+Fetch GET /api/users/me/gigs and render a FlatList of their gigs:
+
+Each card shows Title, Status (Open/In Progress/Closed), Budget, Date Posted
+
+Buttons: Edit (navigates back to the form with pre-filled values) and Cancel (sets status=Closed via DELETE /api/gigs/{id})
+
+3. Provider-Side Changes (React Native)
+A. Rename and Repurpose “Find Providers”
+In the providers’ bottom tab or side drawer, change the label from “Find Providers” to “Find Contracts.”
+
+Update the React Navigation route (e.g. FindProvidersScreen → FindContractsScreen).
+
+B. “Find Contracts” Screen Implementation
+Data Fetch
+
+Call GET /api/gigs?status=open (include filter query params) instead of fetching providers.
+
+Filters Panel
+
+Reuse or adapt your existing filter UI:
+
+Budget range slider
+
+Category checkboxes
+
+Urgency dropdown
+
+Location radius slider or input
+
+Date posted selector
+
+Gig Card
+
+Title, short snippet of Description (2–3 lines)
+
+Budget range badge
+
+Urgency badge (e.g. red for ASAP)
+
+Distance (e.g. “5 km away”)
+
+“Apply” button
+
+C. Applying to a Gig
+On “Apply” tap, open a Modal or new Screen with:
+
+Proposal Message (TextInput multiline)
+
+Optional Custom Rate override (TextInput)
+
+Submit button → calls POST /api/gigs/{id}/applications
+
+On success, show an Alert “Application sent!” and update the gig card state to “Applied.”
+
+D. “My Applications” Screen
+In the provider menu, add “My Applications.”
+
+Fetch GET /api/users/me/applications and list:
+
+Gig Title, Status (Pending/Accepted/Rejected), Date Applied
+
+Tapping opens the full gig details and your proposal text
+
+4. Backend & Permissions Recap
+Gig Model (if not already added) with fields:
+
+title, category, description, budgetMin, budgetMax, urgency, location, attachments, status, createdBy, timestamps
+
+Endpoints
+
+POST /api/gigs – any authenticated client
+
+GET /api/gigs – authenticated providers only
+
+GET /api/users/me/gigs – the gig’s creator only
+
+PUT /api/gigs/{id} & DELETE /api/gigs/{id} – creator only
+
+POST /api/gigs/{id}/applications – providers only
+
+GET /api/users/me/applications – providers only
+
+Enforce Roles at middleware level so clients can post and view only their gigs—and providers can only list and apply to open gigs.
+
+5. Notifications & Real-Time Updates
+On New Gig: emit a Socket.io event (newGig) to all connected providers matching category & proximity.
+
+On New Application: emit a Socket.io event (newApplication) to the gig’s creator.
+
+Final Note for Your Replit Agent
+“Please integrate the above screens, navigation labels, role-based route guards, data fetching calls, and UI components into our existing React Native codebase. Clients should see “Post a Legal Gig” and “My Gigs” flows; providers should see “Find Contracts” and “My Applications.” Keep styling consistent with our current theme and ensure secure API permissions. Once implemented, normal users can post legal gigs and certified providers can discover and apply to them seamlessly.”

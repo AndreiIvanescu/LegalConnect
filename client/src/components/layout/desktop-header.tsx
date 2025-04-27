@@ -25,16 +25,40 @@ export default function DesktopHeader() {
             </Link>
             <nav className="ml-8">
               <ul className="flex space-x-6">
-                <li>
-                  <Link href="/" className="text-neutral-700 hover:text-primary-600 font-medium">
-                    Find Providers
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/services" className="text-neutral-700 hover:text-primary-600 font-medium">
-                    Services
-                  </Link>
-                </li>
+                {user?.role === 'provider' ? (
+                  // Provider navigation
+                  <>
+                    <li>
+                      <Link href="/find-contracts" className="text-neutral-700 hover:text-primary-600 font-medium">
+                        Find Contracts
+                      </Link>
+                    </li>
+                    <li>
+                      <Link href="/my-applications" className="text-neutral-700 hover:text-primary-600 font-medium">
+                        My Applications
+                      </Link>
+                    </li>
+                  </>
+                ) : (
+                  // Client navigation
+                  <>
+                    <li>
+                      <Link href="/" className="text-neutral-700 hover:text-primary-600 font-medium">
+                        Find Providers
+                      </Link>
+                    </li>
+                    <li>
+                      <Link href="/post-gig" className="text-neutral-700 hover:text-primary-600 font-medium">
+                        Post a Legal Gig
+                      </Link>
+                    </li>
+                    <li>
+                      <Link href="/my-gigs" className="text-neutral-700 hover:text-primary-600 font-medium">
+                        My Gigs
+                      </Link>
+                    </li>
+                  </>
+                )}
                 <li>
                   <Link href="/how-it-works" className="text-neutral-700 hover:text-primary-600 font-medium">
                     How it works
