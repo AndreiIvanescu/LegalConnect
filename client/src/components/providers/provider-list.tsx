@@ -21,50 +21,69 @@ interface Provider {
   imageUrl: string;
 }
 
-export default function ProviderList({ location = "Bucharest", filters = {} }) {
+interface ProviderListProps {
+  location?: string;
+  filters?: {
+    searchTerm?: string;
+    specialization?: string;
+    priceRange?: { min?: string; max?: string };
+    availability?: string;
+    rating?: string;
+    location?: string;
+  };
+}
+
+export default function ProviderList({ 
+  location = "Bucharest", 
+  filters = { } 
+}: ProviderListProps) {
   const [sortBy, setSortBy] = useState("recommended");
   const [currentPage, setCurrentPage] = useState(1);
   
+  // Log filters to see what we're getting
+  console.log("Current filters:", filters);
+  
   const { data: providers, isLoading } = useQuery<Provider[]>({
     queryKey: ['/api/providers', filters, location],
-    queryFn: async ({ queryKey }) => {
-      // Extract the filters from queryKey
-      const [_, filtersObj, loc] = queryKey;
-      
+    queryFn: async () => {
       // Build query params
       const params = new URLSearchParams();
       
-      // Type assertion for filters object
-      const typedFilters = filtersObj as Record<string, any>;
-      
       // Add search term if it exists
-      if (typedFilters.searchTerm) {
-        params.append('searchTerm', typedFilters.searchTerm);
+      if (filters.searchTerm) {
+        params.append('searchTerm', filters.searchTerm);
+        console.log("Adding searchTerm to request:", filters.searchTerm);
       }
       
       // Add specialization if it exists and is not null
-      if (typedFilters.specialization) {
-        params.append('specialization', typedFilters.specialization);
+      if (filters.specialization && filters.specialization !== "all") {
+        params.append('specialization', filters.specialization);
+        console.log("Adding specialization to request:", filters.specialization);
       }
       
       // Add price range if it exists
-      if (typedFilters.priceRange && (typedFilters.priceRange.min || typedFilters.priceRange.max)) {
-        params.append('priceRange', JSON.stringify(typedFilters.priceRange));
+      if (filters.priceRange && 
+          (filters.priceRange.min || filters.priceRange.max)) {
+        params.append('priceRange', JSON.stringify(filters.priceRange));
+        console.log("Adding priceRange to request:", filters.priceRange);
       }
       
       // Add availability if it exists
-      if (typedFilters.availability) {
-        params.append('availability', typedFilters.availability);
+      if (filters.availability && filters.availability !== "any") {
+        params.append('availability', filters.availability);
+        console.log("Adding availability to request:", filters.availability);
       }
       
       // Add rating if it exists
-      if (typedFilters.rating) {
-        params.append('rating', typedFilters.rating);
+      if (filters.rating && filters.rating !== "any") {
+        params.append('rating', filters.rating);
+        console.log("Adding rating to request:", filters.rating);
       }
       
       // Add location if it exists
-      if (typedFilters.location) {
-        params.append('location', typedFilters.location);
+      if (filters.location && filters.location !== "any") {
+        params.append('location', filters.location);
+        console.log("Adding location to request:", filters.location);
       }
       
       // Make the request with query params
@@ -78,7 +97,9 @@ export default function ProviderList({ location = "Bucharest", filters = {} }) {
         throw new Error('Failed to fetch providers');
       }
       
-      return response.json();
+      const data = await response.json();
+      console.log("Received filtered providers:", data.length);
+      return data;
     }
   });
   

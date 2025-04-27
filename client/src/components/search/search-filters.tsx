@@ -184,6 +184,7 @@ export default function SearchFilters({ onSearch }: SearchFiltersProps) {
               className="flex w-full"
               onSubmit={(e) => {
                 e.preventDefault();
+                console.log("Search form submitted with term:", searchTerm);
                 handleSubmit();
               }}
             >
@@ -197,7 +198,14 @@ export default function SearchFilters({ onSearch }: SearchFiltersProps) {
                 />
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-400 h-5 w-5" />
               </div>
-              <Button type="submit" className="rounded-l-none">
+              <Button 
+                type="submit" 
+                className="rounded-l-none"
+                onClick={() => {
+                  console.log("Search button clicked with term:", searchTerm);
+                  handleSubmit();
+                }}
+              >
                 Search
               </Button>
             </form>
@@ -406,7 +414,12 @@ export default function SearchFilters({ onSearch }: SearchFiltersProps) {
               </div>
             </div>
             <div className="mt-4 flex justify-end">
-              <Button onClick={handleSubmit}>
+              <Button 
+                onClick={() => {
+                  console.log("Apply Location button clicked with location:", location);
+                  handleSubmit();
+                }}
+              >
                 Apply Location
               </Button>
             </div>
@@ -415,7 +428,19 @@ export default function SearchFilters({ onSearch }: SearchFiltersProps) {
         
         {showAdvanced && (
           <div className="mt-4 flex justify-end">
-            <Button onClick={handleSubmit}>
+            <Button 
+              onClick={() => {
+                console.log("Apply Filters button clicked with filters:", {
+                  searchTerm,
+                  specialization,
+                  priceRange: { min: minPrice, max: maxPrice },
+                  availability,
+                  rating,
+                  location
+                });
+                handleSubmit();
+              }}
+            >
               Apply Filters
             </Button>
           </div>
