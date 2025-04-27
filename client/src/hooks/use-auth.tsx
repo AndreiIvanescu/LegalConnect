@@ -87,7 +87,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await apiRequest("POST", "/api/logout");
     },
     onSuccess: () => {
-      queryClient.setQueryData(["/api/user"], null);
+      // Reset all query cache on logout
+      queryClient.clear();
       navigate("/");
       toast({
         title: "Logged out successfully",
@@ -107,7 +108,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await apiRequest("DELETE", "/api/user");
     },
     onSuccess: () => {
-      queryClient.setQueryData(["/api/user"], null);
+      // Reset all query cache on account deletion
+      queryClient.clear();
       navigate("/");
       toast({
         title: "Account deleted",
