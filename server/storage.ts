@@ -30,7 +30,7 @@ export interface IStorage {
   deleteUser(id: number): Promise<void>;
   
   // Provider methods
-  getAllProviders(): Promise<any[]>;
+  getAllProviders(filters?: any): Promise<any[]>;
   getNearbyProviders(latitude: number, longitude: number, maxDistance: number): Promise<any[]>;
   getProvider(id: number): Promise<any | undefined>;
   getProviderProfileByUserId(userId: number): Promise<ProviderProfile | undefined>;
@@ -226,10 +226,20 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Provider methods
-  async getAllProviders(): Promise<any[]> {
+  async getAllProviders(filters?: any): Promise<any[]> {
     try {
+      console.log("Processing providers with filters:", filters);
+      
       // Get provider profiles
-      const profiles = await db.select().from(providerProfiles);
+      let profilesQuery = db.select().from(providerProfiles);
+      
+      // Apply provider type filter if specified
+      if (filters?.specialization) {
+        profilesQuery = profilesQuery.where(eq(providerProfiles.providerType, filters.specialization));
+      }
+
+      // Execute the query
+      const profiles = await profilesQuery;
       
       // If we don't have any profiles yet, return empty array to avoid further errors
       if (!profiles || profiles.length === 0) {
@@ -258,8 +268,31 @@ export class DatabaseStorage implements IStorage {
             ? reviewList.reduce((sum: number, review: any) => sum + review.rating, 0) / reviewList.length 
             : 0;
           
+          // Skip providers that don't meet rating filter criteria
+          if (filters?.rating && avgRating < Number(filters.rating)) {
+            return null;
+          }
+          
+          // Check price range filter
+          if (filters?.priceRange) {
+            const minPrice = this.calculateMinPrice(servicesList);
+            
+            if (filters.priceRange.min && minPrice < Number(filters.priceRange.min) * 100) {
+              return null;
+            }
+            
+            if (filters.priceRange.max && minPrice > Number(filters.priceRange.max) * 100) {
+              return null;
+            }
+          }
+          
+          // Check availability filter
+          if (filters?.availability === '24_7' && !profile.is24_7) {
+            return null;
+          }
+          
           // Format the provider data for the client
-          return {
+          const providerData = {
             id: profile.id,
             name: userData?.fullName || 'Unknown Provider',
             type: profile.providerType,
@@ -278,6 +311,8 @@ export class DatabaseStorage implements IStorage {
             longitude: profile.longitude,
             serviceRadius: profile.serviceRadius
           };
+          
+          return providerData;
         } catch (error) {
           console.error(`Error processing provider profile ${profile.id}:`, error);
           return null; // Skip this provider on error
@@ -285,7 +320,31 @@ export class DatabaseStorage implements IStorage {
       }));
       
       // Filter out any null entries from failed processing
-      return providersWithDetails.filter(provider => provider !== null);
+      let filteredProviders = providersWithDetails.filter(provider => provider !== null);
+      
+      // Apply search term filter
+      if (filters?.searchTerm) {
+        const searchTerm = filters.searchTerm.toLowerCase();
+        filteredProviders = filteredProviders.filter(provider => 
+          provider.name.toLowerCase().includes(searchTerm) || 
+          provider.type.toLowerCase().includes(searchTerm) || 
+          provider.specializations.some((s: string) => s.toLowerCase().includes(searchTerm)) ||
+          provider.location.toLowerCase().includes(searchTerm)
+        );
+      }
+      
+      // Apply location filter
+      if (filters?.location && filters.location !== 'any') {
+        // Extract the label part from location value
+        const locationLabels = filters.location.split('-');
+        const locationLabel = locationLabels[0]; // Get the first part before the random ID
+        
+        filteredProviders = filteredProviders.filter(provider => 
+          provider.location.toLowerCase().includes(locationLabel.toLowerCase())
+        );
+      }
+      
+      return filteredProviders;
     } catch (error) {
       console.error("Error in getAllProviders:", error);
       return []; // Return empty array on error

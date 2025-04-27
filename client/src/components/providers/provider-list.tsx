@@ -26,7 +26,60 @@ export default function ProviderList({ location = "Bucharest", filters = {} }) {
   const [currentPage, setCurrentPage] = useState(1);
   
   const { data: providers, isLoading } = useQuery<Provider[]>({
-    queryKey: ['/api/providers', filters, location]
+    queryKey: ['/api/providers', filters, location],
+    queryFn: async ({ queryKey }) => {
+      // Extract the filters from queryKey
+      const [_, filtersObj, loc] = queryKey;
+      
+      // Build query params
+      const params = new URLSearchParams();
+      
+      // Type assertion for filters object
+      const typedFilters = filtersObj as Record<string, any>;
+      
+      // Add search term if it exists
+      if (typedFilters.searchTerm) {
+        params.append('searchTerm', typedFilters.searchTerm);
+      }
+      
+      // Add specialization if it exists and is not null
+      if (typedFilters.specialization) {
+        params.append('specialization', typedFilters.specialization);
+      }
+      
+      // Add price range if it exists
+      if (typedFilters.priceRange && (typedFilters.priceRange.min || typedFilters.priceRange.max)) {
+        params.append('priceRange', JSON.stringify(typedFilters.priceRange));
+      }
+      
+      // Add availability if it exists
+      if (typedFilters.availability) {
+        params.append('availability', typedFilters.availability);
+      }
+      
+      // Add rating if it exists
+      if (typedFilters.rating) {
+        params.append('rating', typedFilters.rating);
+      }
+      
+      // Add location if it exists
+      if (typedFilters.location) {
+        params.append('location', typedFilters.location);
+      }
+      
+      // Make the request with query params
+      const url = `/api/providers${params.toString() ? `?${params.toString()}` : ''}`;
+      
+      console.log("Fetching providers with URL:", url);
+      
+      const response = await fetch(url);
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch providers');
+      }
+      
+      return response.json();
+    }
   });
   
   if (isLoading) {
