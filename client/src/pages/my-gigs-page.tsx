@@ -110,7 +110,7 @@ export default function MyGigsPage() {
   // Accept application mutation
   const acceptApplicationMutation = useMutation({
     mutationFn: async ({ gigId, applicationId }: { gigId: number, applicationId: number }) => {
-      await apiRequest("PATCH", `/api/jobs/${gigId}/application/${applicationId}`, { status: "accepted" });
+      await apiRequest("PATCH", `/api/gigs/${gigId}/applications/${applicationId}`, { status: "accepted" });
     },
     onSuccess: () => {
       toast({
