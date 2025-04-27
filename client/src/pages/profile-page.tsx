@@ -165,11 +165,10 @@ export default function ProfilePage() {
                     <Button 
                       variant="ghost" 
                       className="w-full justify-start text-red-500 hover:text-red-500 hover:bg-red-50"
-                      onClick={() => logoutMutation.mutate(undefined, {
-                        onSuccess: () => navigate('/')
-                      })}
+                      onClick={() => logoutMutation.mutate()}
+                      disabled={logoutMutation.isPending}
                     >
-                      Logout
+                      {logoutMutation.isPending ? "Logging out..." : "Logout"}
                     </Button>
                   </nav>
                 </CardContent>

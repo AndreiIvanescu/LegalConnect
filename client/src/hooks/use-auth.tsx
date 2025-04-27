@@ -87,10 +87,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await apiRequest("POST", "/api/logout");
     },
     onSuccess: () => {
-      // Reset all query cache and set user to null
-      queryClient.clear();
+      // First set the user to null explicitly to ensure the UI updates
       queryClient.setQueryData(["/api/user"], null);
-      navigate("/auth");
+      
+      // Then reset all query cache
+      queryClient.clear();
+      
+      // Force a reload to ensure all cached state is properly cleared
+      window.location.href = "/auth";
+      
       toast({
         title: "Logged out successfully",
       });
@@ -109,9 +114,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await apiRequest("DELETE", "/api/user");
     },
     onSuccess: () => {
-      // Reset all query cache on account deletion
+      // First set the user to null explicitly to ensure the UI updates
+      queryClient.setQueryData(["/api/user"], null);
+      
+      // Then reset all query cache
       queryClient.clear();
-      navigate("/");
+      
+      // Force a reload to ensure all cached state is properly cleared
+      window.location.href = "/auth";
+      
       toast({
         title: "Account deleted",
         description: "Your account has been permanently deleted.",
