@@ -51,7 +51,12 @@ export default function AuthPage() {
   });
   
   function onLoginSubmit(values: z.infer<typeof loginSchema>) {
-    loginMutation.mutate(values);
+    loginMutation.mutate(values, {
+      onSuccess: () => {
+        // Force a page reload to ensure all auth states are updated
+        window.location.href = '/';
+      }
+    });
   }
   
   // Register form
