@@ -162,16 +162,20 @@ export default function SearchFilters({ onSearch }: SearchFiltersProps) {
   const groupedLocations = groupLocationsByFirstLetter(filteredLocations);
 
   const handleSubmit = () => {
-    // Convert special "all" and "any" values to empty strings or null values for filtering
+    // Convert special "all" and "any" values to undefined for filtering
     const filters = {
-      searchTerm,
-      specialization: specialization === "all" ? null : specialization,
-      priceRange: { min: minPrice, max: maxPrice },
-      availability: availability === "any" ? null : availability,
-      rating: rating === "any" ? null : rating,
-      location: location === "any" ? null : location
+      searchTerm: searchTerm || undefined,
+      specialization: specialization === "all" ? undefined : specialization,
+      priceRange: { 
+        min: minPrice || undefined, 
+        max: maxPrice || undefined 
+      },
+      availability: availability === "any" ? undefined : availability,
+      rating: rating === "any" ? undefined : rating,
+      location: location === "any" ? undefined : location
     };
     
+    console.log("Submitting filters to parent component:", filters);
     onSearch(filters);
   };
 

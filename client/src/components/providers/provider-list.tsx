@@ -87,7 +87,8 @@ export default function ProviderList({
       }
       
       // Make the request with query params
-      const url = `/api/providers${params.toString() ? `?${params.toString()}` : ''}`;
+      const queryString = params.toString();
+      const url = `/api/providers${queryString ? `?${queryString}` : ''}`;
       
       console.log("Fetching providers with URL:", url);
       
