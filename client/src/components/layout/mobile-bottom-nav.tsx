@@ -1,12 +1,19 @@
 import { Link, useLocation } from "wouter";
-import { Search, Calendar, MessageSquare, User, Clock, Home } from "lucide-react";
+import { Search, Calendar, MessageSquare, User, Clock, Home, LogOut } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { FilePlus, Briefcase, Book, FileText } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export default function MobileBottomNav() {
   const [location] = useLocation();
-  const { user } = useAuth();
+  const { user, logoutMutation } = useAuth();
+  const [, navigate] = useLocation();
   // Use state to track the provider status for more reliable re-rendering
   const [isProvider, setIsProvider] = useState(false);
   
@@ -20,6 +27,10 @@ export default function MobileBottomNav() {
   
   // Always log current values for debugging
   console.log("MobileNav render - Username:", user?.username, "Role:", user?.role, "Is Provider state:", isProvider);
+  
+  const handleLogout = () => {
+    logoutMutation.mutate();
+  };
   
   return (
     <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white shadow-lg border-t border-neutral-200 z-50">
@@ -47,10 +58,22 @@ export default function MobileBottomNav() {
                 <MessageSquare className={`h-5 w-5 transition-transform ${location === '/messages' ? 'scale-110' : ''}`} />
                 <span className="text-[10px] mt-1">Messages</span>
             </Link>
-            <Link href="/profile" className={`flex flex-col items-center py-2 transition-all ${location === '/profile' ? 'text-primary font-medium scale-105' : 'text-neutral-500'}`}>
+            <DropdownMenu>
+              <DropdownMenuTrigger className={`flex flex-col items-center py-2 transition-all ${location === '/profile' ? 'text-primary font-medium scale-105' : 'text-neutral-500'}`}>
                 <User className={`h-5 w-5 transition-transform ${location === '/profile' ? 'scale-110' : ''}`} />
                 <span className="text-[10px] mt-1">Profile</span>
-            </Link>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="mb-1">
+                <DropdownMenuItem onClick={() => navigate('/profile')}>
+                  <User className="mr-2 h-4 w-4" />
+                  <span>My Profile</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleLogout}>
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>Logout</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </>
         )}
         

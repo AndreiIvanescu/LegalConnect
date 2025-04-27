@@ -115,7 +115,7 @@ function AuthAwareHeader() {
         <div className="flex items-center gap-4">
           {user ? (
             <>
-              {isMobile ? (
+              {isMobile && user.role === 'client' ? (
                 <Sheet>
                   <SheetTrigger asChild>
                     <Button variant="ghost" size="icon">
@@ -155,32 +155,6 @@ function AuthAwareHeader() {
                           Messages
                         </Button>
                       </SheetClose>
-                      {user.role === 'provider' && (
-                        <>
-                          <SheetClose asChild>
-                            <Button 
-                              variant="ghost" 
-                              className="justify-start w-full" 
-                              size="sm"
-                              onClick={() => navigate('/provider/dashboard')}
-                            >
-                              <Shield className="mr-2 h-4 w-4" />
-                              Provider Dashboard
-                            </Button>
-                          </SheetClose>
-                          <SheetClose asChild>
-                            <Button 
-                              variant="ghost" 
-                              className="justify-start w-full" 
-                              size="sm"
-                              onClick={() => navigate('/job-board')}
-                            >
-                              <ListFilter className="mr-2 h-4 w-4" />
-                              Job Board
-                            </Button>
-                          </SheetClose>
-                        </>
-                      )}
                       
                       {user.role === 'client' && (
                         <SheetClose asChild>
@@ -220,6 +194,11 @@ function AuthAwareHeader() {
                     </div>
                   </SheetContent>
                 </Sheet>
+              ) : isMobile && user.role === 'provider' ? (
+                // For providers on mobile, just show avatar without hamburger menu
+                <Avatar className="h-8 w-8">
+                  <AvatarFallback>{user.fullName?.charAt(0) || user.username?.charAt(0)}</AvatarFallback>
+                </Avatar>
               ) : (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
