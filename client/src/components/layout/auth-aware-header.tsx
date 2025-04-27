@@ -37,11 +37,8 @@ function AuthAwareHeader() {
   const isActive = (path: string) => location === path;
 
   const handleLogout = () => {
-    logoutMutation.mutate(undefined, {
-      onSuccess: () => {
-        navigate('/');
-      }
-    });
+    // Use the default logout behavior from useAuth without overriding
+    logoutMutation.mutate();
   };
 
   return (

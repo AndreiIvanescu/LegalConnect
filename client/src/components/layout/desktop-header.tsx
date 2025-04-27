@@ -8,6 +8,7 @@ export default function DesktopHeader() {
   const { user, logoutMutation } = useAuth();
 
   const handleLogout = () => {
+    // Use the default logout behavior from useAuth
     logoutMutation.mutate();
   };
   
