@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -56,16 +56,16 @@ interface Gig {
 }
 
 export default function FindContractsPage() {
-  const { user } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
   const { toast } = useToast();
   const [, navigate] = useLocation();
   
   // Search and filter state
   const [searchTerm, setSearchTerm] = useState("");
-  const [category, setCategory] = useState("");
+  const [category, setCategory] = useState("all");
   const [budgetMin, setBudgetMin] = useState("");
   const [budgetMax, setBudgetMax] = useState("");
-  const [urgency, setUrgency] = useState("");
+  const [urgency, setUrgency] = useState("any");
   const [onlyNearby, setOnlyNearby] = useState(false);
   
   // Application dialog state
@@ -74,16 +74,18 @@ export default function FindContractsPage() {
   const [customRate, setCustomRate] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   
-  // Redirect if user is not logged in or is not a provider
-  if (!user) {
-    navigate("/auth");
-    return null;
-  }
-
-  if (user.role !== "provider") {
-    navigate("/");
-    return null;
-  }
+  // Use useEffect to handle authentication redirects
+  useEffect(() => {
+    if (!authLoading) {
+      if (!user) {
+        console.log("User not authenticated, redirecting to auth page");
+        navigate("/auth");
+      } else if (user.role !== "provider") {
+        console.log(`User is ${user.role}, not provider - redirecting to home`);
+        navigate("/");
+      }
+    }
+  }, [user, authLoading, navigate]);
   
   // Fetch provider profile to get provider type
   const { data: providerProfile } = useQuery({
@@ -123,7 +125,7 @@ export default function FindContractsPage() {
         params.append("searchTerm", searchTerm);
       }
       
-      if (category) {
+      if (category && category !== "all") {
         params.append("category", category);
       }
       
@@ -135,7 +137,7 @@ export default function FindContractsPage() {
         params.append("budgetMax", budgetMax);
       }
       
-      if (urgency) {
+      if (urgency && urgency !== "any") {
         params.append("urgency", urgency);
       }
       
@@ -273,7 +275,7 @@ export default function FindContractsPage() {
                   </div>
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Types</SelectItem>
+                  <SelectItem value="all">All Types</SelectItem>
                   <SelectItem value="notary">Notary</SelectItem>
                   <SelectItem value="judicial_executor">Judicial Executor</SelectItem>
                   <SelectItem value="lawyer">Lawyer</SelectItem>
@@ -314,7 +316,7 @@ export default function FindContractsPage() {
                   <SelectValue placeholder="Any urgency" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Any urgency</SelectItem>
+                  <SelectItem value="any">Any urgency</SelectItem>
                   <SelectItem value="asap">ASAP</SelectItem>
                   <SelectItem value="within_24h">Within 24 hours</SelectItem>
                   <SelectItem value="specific_date">Specific date</SelectItem>
@@ -340,10 +342,10 @@ export default function FindContractsPage() {
             <Button onClick={() => {
               // Reset all filters
               setSearchTerm("");
-              setCategory("");
+              setCategory("all");
               setBudgetMin("");
               setBudgetMax("");
-              setUrgency("");
+              setUrgency("any");
               setOnlyNearby(false);
             }} variant="outline" className="mr-2 border-primary/20 text-primary hover:bg-primary/5">
               Reset Filters
@@ -373,10 +375,10 @@ export default function FindContractsPage() {
               onClick={() => {
                 // Reset all filters
                 setSearchTerm("");
-                setCategory("");
+                setCategory("all");
                 setBudgetMin("");
                 setBudgetMax("");
-                setUrgency("");
+                setUrgency("any");
                 setOnlyNearby(false);
                 
                 // Force refresh
