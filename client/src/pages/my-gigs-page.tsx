@@ -59,6 +59,12 @@ interface Gig {
   }>;
 }
 
+// Helper function to format budget values
+const formatBudget = (value: number | undefined | null): string => {
+  if (value === undefined || value === null) return "0";
+  return value.toLocaleString();
+};
+
 export default function MyGigsPage() {
   const { user } = useAuth();
   const { toast } = useToast();
