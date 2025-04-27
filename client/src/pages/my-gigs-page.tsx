@@ -80,7 +80,7 @@ export default function MyGigsPage() {
   const { data: gigs, isLoading, isError } = useQuery<Gig[]>({
     queryKey: ["/api/users/me/gigs"],
     queryFn: async () => {
-      const response = await apiRequest("GET", "/api/users/me/gigs");
+      const response = await apiRequest("GET", "/api/gigs/client");
       return response.json();
     }
   });
