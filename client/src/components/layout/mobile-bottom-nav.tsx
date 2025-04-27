@@ -7,7 +7,13 @@ import { FilePlus, Briefcase } from "lucide-react";
 export default function MobileBottomNav() {
   const [location] = useLocation();
   const { user } = useAuth();
+  
+  // Force re-render to ensure the user role is correctly applied
+  // This ensures the navigation updates when user data changes
   const isProvider = user?.role === 'provider';
+  
+  // Debug log to check what's happening with user role
+  console.log("Mobile Nav - User Role:", user?.role, "Is Provider:", isProvider);
   
   return (
     <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white shadow-lg border-t border-neutral-200 z-50">

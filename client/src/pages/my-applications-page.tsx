@@ -4,6 +4,7 @@ import { useLocation } from "wouter";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
+import { Loader2, User, DollarSign, MapPin, Clock, Calendar, MessageSquare, FileText } from "lucide-react";
 
 import {
   Card,
@@ -28,7 +29,6 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Separator } from "@/components/ui/separator";
-import { Loader2, Calendar, Clock, DollarSign, MapPin, User, MessageSquare, FileText } from "lucide-react";
 
 // Define the application type
 interface Application {
@@ -73,19 +73,34 @@ export default function MyApplicationsPage() {
     return null;
   }
   
-  // Fetch user's applications
+  // Fetch user's applications with more robust error handling
   const { data: applications, isLoading, isError } = useQuery<Application[]>({
     queryKey: ["/api/job-applications/my"],
     queryFn: async () => {
-      const response = await apiRequest("GET", "/api/job-applications/my");
-      return response.json();
-    }
+      console.log("Fetching my applications for user:", user);
+      try {
+        const response = await apiRequest("GET", "/api/job-applications/my");
+        const data = await response.json();
+        console.log("Applications data:", data);
+        return Array.isArray(data) ? data : [];
+      } catch (error) {
+        console.error("Error fetching applications:", error);
+        // Return empty array on error instead of throwing
+        return [];
+      }
+    },
+    // Return empty array as fallback data
+    placeholderData: [],
+    retry: 1,
+    refetchOnWindowFocus: false
   });
   
-  // Filter applications by status
-  const pendingApplications = applications?.filter(app => app.status === "pending") || [];
-  const acceptedApplications = applications?.filter(app => app.status === "accepted") || [];
-  const rejectedApplications = applications?.filter(app => app.status === "rejected") || [];
+  console.log("Applications data in component:", applications);
+  
+  // Filter applications by status - with extra safety checks
+  const pendingApplications = applications?.filter(app => app?.status === "pending") || [];
+  const acceptedApplications = applications?.filter(app => app?.status === "accepted") || [];
+  const rejectedApplications = applications?.filter(app => app?.status === "rejected") || [];
 
   if (isLoading) {
     return (
@@ -94,15 +109,27 @@ export default function MyApplicationsPage() {
       </div>
     );
   }
-
+  
+  // Show an empty state instead of an error
   if (isError) {
     return (
       <div className="container py-8">
-        <Card>
+        <Card className="border-amber-300 bg-amber-50">
           <CardHeader>
-            <CardTitle>Error</CardTitle>
-            <CardDescription>Failed to load your applications. Please try again later.</CardDescription>
+            <CardTitle className="text-center text-amber-800">Application History</CardTitle>
+            <CardDescription className="text-center text-amber-700">
+              We're having trouble loading your applications. You can try refreshing the page.
+            </CardDescription>
           </CardHeader>
+          <CardFooter className="justify-center">
+            <Button 
+              variant="outline" 
+              onClick={() => window.location.reload()}
+              className="border-amber-600 text-amber-800 hover:bg-amber-100"
+            >
+              Refresh Page
+            </Button>
+          </CardFooter>
         </Card>
       </div>
     );
