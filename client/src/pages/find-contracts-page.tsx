@@ -62,10 +62,10 @@ export default function FindContractsPage() {
   
   // Search and filter state
   const [searchTerm, setSearchTerm] = useState("");
-  const [category, setCategory] = useState<string | undefined>(undefined);
+  const [category, setCategory] = useState("");
   const [budgetMin, setBudgetMin] = useState("");
   const [budgetMax, setBudgetMax] = useState("");
-  const [urgency, setUrgency] = useState<string | undefined>(undefined);
+  const [urgency, setUrgency] = useState("");
   const [onlyNearby, setOnlyNearby] = useState(false);
   
   // Application dialog state
@@ -238,7 +238,7 @@ export default function FindContractsPage() {
                   </div>
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={undefined}>All Types</SelectItem>
+                  <SelectItem value="">All Types</SelectItem>
                   <SelectItem value="notary">Notary</SelectItem>
                   <SelectItem value="judicial_executor">Judicial Executor</SelectItem>
                   <SelectItem value="lawyer">Lawyer</SelectItem>
@@ -277,7 +277,7 @@ export default function FindContractsPage() {
                   <SelectValue placeholder="Any urgency" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={undefined}>Any urgency</SelectItem>
+                  <SelectItem value="">Any urgency</SelectItem>
                   <SelectItem value="asap">ASAP</SelectItem>
                   <SelectItem value="within_24h">Within 24 hours</SelectItem>
                   <SelectItem value="specific_date">Specific date</SelectItem>
@@ -302,10 +302,10 @@ export default function FindContractsPage() {
             <Button onClick={() => {
               // Reset all filters
               setSearchTerm("");
-              setCategory(undefined);
+              setCategory("");
               setBudgetMin("");
               setBudgetMax("");
-              setUrgency(undefined);
+              setUrgency("");
               setOnlyNearby(false);
             }} variant="outline" className="mr-2">
               Reset Filters
@@ -333,10 +333,10 @@ export default function FindContractsPage() {
             <Button variant="outline" onClick={() => {
               // Reset all filters
               setSearchTerm("");
-              setCategory(undefined);
+              setCategory("");
               setBudgetMin("");
               setBudgetMax("");
-              setUrgency(undefined);
+              setUrgency("");
               setOnlyNearby(false);
               
               // Force refresh

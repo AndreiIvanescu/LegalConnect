@@ -28,13 +28,24 @@ function Router() {
       <Route path="/" component={HomePage} />
       <Route path="/auth" component={AuthPage} />
       <Route path="/providers/:id" component={ProviderDetailPage} />
+      
+      {/* Common protected routes */}
       <ProtectedRoute path="/bookings" component={BookingsPage} />
       <ProtectedRoute path="/messages" component={MessagesPage} />
       <ProtectedRoute path="/profile" component={ProfilePage} />
       <ProtectedRoute path="/profile/setup" component={ProfileSetupPage} />
+      
+      {/* Provider-specific routes */}
       <ProtectedRoute path="/provider/dashboard" component={ProviderDashboard} />
+      <ProtectedRoute path="/find-contracts" component={FindContractsPage} />
+      <ProtectedRoute path="/my-applications" component={MyApplicationsPage} />
+      
+      {/* Client-specific routes */}
+      <ProtectedRoute path="/post-gig" component={PostGigPage} />
+      <ProtectedRoute path="/my-gigs" component={MyGigsPage} />
       <ProtectedRoute path="/jobs" component={JobPostingPage} />
       <ProtectedRoute path="/job-board" component={JobBoardPage} />
+      
       <Route component={NotFound} />
     </Switch>
   );
