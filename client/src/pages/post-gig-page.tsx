@@ -117,7 +117,7 @@ export default function PostGigPage() {
           budgetMax: parseFloat(data.budgetMax),
         };
 
-        const response = await apiRequest("POST", "/api/gigs", gigData);
+        const response = await apiRequest("POST", "/api/jobs", gigData);
         
         // Check if response is valid JSON
         const contentType = response.headers.get("content-type");
@@ -142,8 +142,8 @@ export default function PostGigPage() {
       });
       
       // Refresh gigs data
-      queryClient.invalidateQueries({ queryKey: ["/api/gigs"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/users/me/gigs"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/jobs"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/jobs/my"] });
       
       // Navigate to my gigs page
       navigate("/my-gigs");
