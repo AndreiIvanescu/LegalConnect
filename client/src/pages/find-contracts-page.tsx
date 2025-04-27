@@ -89,9 +89,19 @@ export default function FindContractsPage() {
   const { data: providerProfile } = useQuery({
     queryKey: ['/api/profile/provider'],
     queryFn: async () => {
-      const response = await apiRequest("GET", "/api/profile/provider");
-      return response.json();
+      if (!user || user.role !== 'provider') {
+        return null;
+      }
+      
+      try {
+        const response = await apiRequest("GET", "/api/profile/provider");
+        return response.json();
+      } catch (error) {
+        console.error("Error fetching provider profile:", error);
+        return null;
+      }
     },
+    enabled: !!user && user.role === 'provider'
   });
   
   // Get provider type from profile or default to 'lawyer'
@@ -101,6 +111,11 @@ export default function FindContractsPage() {
   const { data: gigs, isLoading, isError } = useQuery<Gig[]>({
     queryKey: [`/api/jobs/provider-type/${providerType}`, { searchTerm, category, budgetMin, budgetMax, urgency, onlyNearby }],
     queryFn: async () => {
+      // If user is not authenticated, return an empty array
+      if (!user) {
+        return [];
+      }
+      
       // Build query params
       const params = new URLSearchParams();
       
@@ -132,9 +147,16 @@ export default function FindContractsPage() {
       
       // Use the correct endpoint for job postings instead of gigs
       const url = `/api/jobs/provider-type/${providerType}${params.toString() ? `?${params.toString()}` : ''}`;
-      const response = await apiRequest("GET", url);
-      return response.json();
-    }
+      try {
+        const response = await apiRequest("GET", url);
+        return response.json();
+      } catch (error) {
+        console.error("Error fetching jobs:", error);
+        return [];
+      }
+    },
+    // Skip the query if the user isn't authenticated
+    enabled: !!user && user.role === 'provider'
   });
 
   // Apply to gig mutation
