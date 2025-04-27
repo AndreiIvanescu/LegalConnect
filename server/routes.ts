@@ -42,10 +42,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication routes
   setupAuth(app);
 
-  // Get all providers
+  // Get all providers with optional filtering
   app.get("/api/providers", async (req, res) => {
     try {
-      const providers = await storage.getAllProviders();
+      const {
+        searchTerm,
+        specialization,
+        priceRange,
+        availability,
+        rating,
+        location
+      } = req.query;
+
+      // Parse filters from query params
+      const filters = {
+        searchTerm: searchTerm ? String(searchTerm) : undefined,
+        specialization: specialization ? String(specialization) : undefined,
+        priceRange: priceRange ? JSON.parse(String(priceRange)) : undefined,
+        availability: availability ? String(availability) : undefined,
+        rating: rating ? Number(rating) : undefined,
+        location: location ? String(location) : undefined
+      };
+
+      // Log the received filters for debugging
+      console.log("Filtering providers with:", filters);
+      
+      const providers = await storage.getAllProviders(filters);
       res.json(providers);
     } catch (error) {
       console.error("Error fetching providers:", error);
