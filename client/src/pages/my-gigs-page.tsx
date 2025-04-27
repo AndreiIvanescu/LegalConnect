@@ -256,7 +256,7 @@ export default function MyGigsPage() {
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                       <div className="flex items-center">
                         <DollarSign className="h-4 w-4 mr-2 text-muted-foreground" />
-                        <span>Budget: {gig.budgetMin} - {gig.budgetMax} RON</span>
+                        <span>Budget: {formatBudget(gig.budgetMin)} - {formatBudget(gig.budgetMax)} RON</span>
                       </div>
                       <div className="flex items-center">
                         <MapPin className="h-4 w-4 mr-2 text-muted-foreground" />
@@ -363,7 +363,7 @@ export default function MyGigsPage() {
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                       <div className="flex items-center">
                         <DollarSign className="h-4 w-4 mr-2 text-muted-foreground" />
-                        <span>Budget: {gig.budgetMin} - {gig.budgetMax} RON</span>
+                        <span>Budget: {formatBudget(gig.budgetMin)} - {formatBudget(gig.budgetMax)} RON</span>
                       </div>
                       <div className="flex items-center">
                         <MapPin className="h-4 w-4 mr-2 text-muted-foreground" />
@@ -394,30 +394,11 @@ export default function MyGigsPage() {
                             </div>
                             <Badge>Working</Badge>
                           </div>
-                          <Button className="mt-3" size="sm" variant="outline" onClick={() => {
-                            // Navigate to chat with this provider
-                            navigate(`/messages?provider=${application.providerId}`);
-                          }}>
-                            Message Provider
-                          </Button>
+                          <p className="text-sm mt-2">{application.message}</p>
                         </div>
                       ))}
                     </div>
                   </CardContent>
-                  <CardFooter>
-                    <Button 
-                      onClick={() => {
-                        // Mark as completed
-                        // This would need a backend endpoint
-                        toast({
-                          title: "Coming Soon",
-                          description: "The option to mark gigs as completed will be available soon.",
-                        });
-                      }}
-                    >
-                      Mark as Completed
-                    </Button>
-                  </CardFooter>
                 </Card>
               ))}
             </div>
@@ -448,7 +429,7 @@ export default function MyGigsPage() {
                           <span>Posted on {new Date(gig.createdAt).toLocaleDateString()}</span>
                         </div>
                       </div>
-                      <Badge variant={gig.status === "completed" ? "default" : "secondary"}>
+                      <Badge variant={gig.status === "completed" ? "outline" : "destructive"}>
                         {gig.status === "completed" ? "Completed" : "Cancelled"}
                       </Badge>
                     </div>
@@ -457,40 +438,24 @@ export default function MyGigsPage() {
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                       <div className="flex items-center">
                         <DollarSign className="h-4 w-4 mr-2 text-muted-foreground" />
-                        <span>Budget: {gig.budgetMin} - {gig.budgetMax} RON</span>
+                        <span>Budget: {formatBudget(gig.budgetMin)} - {formatBudget(gig.budgetMax)} RON</span>
                       </div>
                       <div className="flex items-center">
                         <MapPin className="h-4 w-4 mr-2 text-muted-foreground" />
                         <span>{gig.location}</span>
                       </div>
+                      <div className="flex items-center">
+                        <Clock className="h-4 w-4 mr-2 text-muted-foreground" />
+                        <span>
+                          {gig.urgency === "asap" && "As soon as possible"}
+                          {gig.urgency === "within_24h" && "Within 24 hours"}
+                          {gig.urgency === "specific_date" && `On ${new Date(gig.specificDate || "").toLocaleDateString()}`}
+                        </span>
+                      </div>
                     </div>
                     
                     <p className="text-sm mb-4">{gig.description}</p>
-                    
-                    {gig.status === "completed" && gig.applications && (
-                      <>
-                        <Separator className="my-4" />
-                        <div>
-                          <h4 className="text-sm font-medium mb-2">Provider:</h4>
-                          {gig.applications.filter(app => app.status === "accepted").map((application) => (
-                            <div key={application.id} className="border rounded-md p-3">
-                              <div className="flex items-center">
-                                <User className="h-4 w-4 mr-2" />
-                                <span className="font-medium">{application.providerName}</span>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </>
-                    )}
                   </CardContent>
-                  {gig.status === "completed" && (
-                    <CardFooter>
-                      <Button variant="outline">
-                        Leave Feedback
-                      </Button>
-                    </CardFooter>
-                  )}
                 </Card>
               ))}
             </div>
