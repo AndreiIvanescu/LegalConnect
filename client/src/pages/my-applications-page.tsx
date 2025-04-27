@@ -109,18 +109,27 @@ export default function MyApplicationsPage() {
   }
 
   return (
-    <div className="container py-8">
-      <h1 className="text-2xl font-bold mb-6">My Applications</h1>
+    <div className="container pt-4 pb-24 md:pt-8 md:pb-8">
+      <h1 className="text-2xl font-bold mb-6 px-4 md:px-0">My Applications</h1>
       
-      <Tabs defaultValue="pending" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="pending">
+      <Tabs defaultValue="pending" className="space-y-6">
+        <TabsList className="grid w-full grid-cols-3 bg-primary/5 p-1 rounded-md">
+          <TabsTrigger 
+            value="pending" 
+            className="rounded-md data-[state=active]:bg-primary data-[state=active]:text-white"
+          >
             Pending ({pendingApplications.length})
           </TabsTrigger>
-          <TabsTrigger value="accepted">
+          <TabsTrigger 
+            value="accepted" 
+            className="rounded-md data-[state=active]:bg-primary data-[state=active]:text-white"
+          >
             Accepted ({acceptedApplications.length})
           </TabsTrigger>
-          <TabsTrigger value="rejected">
+          <TabsTrigger 
+            value="rejected" 
+            className="rounded-md data-[state=active]:bg-primary data-[state=active]:text-white"
+          >
             Rejected ({rejectedApplications.length})
           </TabsTrigger>
         </TabsList>
@@ -128,19 +137,24 @@ export default function MyApplicationsPage() {
         {/* Pending Applications */}
         <TabsContent value="pending">
           {pendingApplications.length === 0 ? (
-            <Card>
+            <Card className="border-0 shadow-md md:border md:shadow-sm">
               <CardHeader>
-                <CardTitle>No Pending Applications</CardTitle>
-                <CardDescription>
+                <CardTitle className="text-xl text-primary-900">No Pending Applications</CardTitle>
+                <CardDescription className="text-neutral-600">
                   You don't have any pending applications at the moment.
                 </CardDescription>
               </CardHeader>
               <CardFooter>
-                <Button onClick={() => navigate("/find-contracts")}>Find Contracts</Button>
+                <Button 
+                  onClick={() => navigate("/find-contracts")}
+                  className="bg-primary hover:bg-primary/90"
+                >
+                  Find Contracts
+                </Button>
               </CardFooter>
             </Card>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-5 px-2 md:px-0">
               {pendingApplications.map((application) => (
                 <ApplicationCard
                   key={application.id}
@@ -155,16 +169,16 @@ export default function MyApplicationsPage() {
         {/* Accepted Applications */}
         <TabsContent value="accepted">
           {acceptedApplications.length === 0 ? (
-            <Card>
+            <Card className="border-0 shadow-md md:border md:shadow-sm">
               <CardHeader>
-                <CardTitle>No Accepted Applications</CardTitle>
-                <CardDescription>
+                <CardTitle className="text-xl text-primary-900">No Accepted Applications</CardTitle>
+                <CardDescription className="text-neutral-600">
                   None of your applications have been accepted yet.
                 </CardDescription>
               </CardHeader>
             </Card>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-5 px-2 md:px-0">
               {acceptedApplications.map((application) => (
                 <ApplicationCard
                   key={application.id}
@@ -179,16 +193,16 @@ export default function MyApplicationsPage() {
         {/* Rejected Applications */}
         <TabsContent value="rejected">
           {rejectedApplications.length === 0 ? (
-            <Card>
+            <Card className="border-0 shadow-md md:border md:shadow-sm">
               <CardHeader>
-                <CardTitle>No Rejected Applications</CardTitle>
-                <CardDescription>
+                <CardTitle className="text-xl text-primary-900">No Rejected Applications</CardTitle>
+                <CardDescription className="text-neutral-600">
                   None of your applications have been rejected.
                 </CardDescription>
               </CardHeader>
             </Card>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-5 px-2 md:px-0">
               {rejectedApplications.map((application) => (
                 <ApplicationCard
                   key={application.id}
@@ -212,46 +226,58 @@ function ApplicationCard({
   application: Application, 
   navigate: (path: string) => void 
 }) {
+  // Badge styling based on status
+  const getBadgeStyles = () => {
+    switch(application.status) {
+      case "pending":
+        return "border-amber-200 text-amber-700 bg-amber-50";
+      case "accepted":
+        return "border-emerald-200 text-emerald-700 bg-emerald-50";
+      case "rejected":
+        return "border-neutral-200 text-neutral-600 bg-neutral-50";
+      default:
+        return "";
+    }
+  };
+
   return (
-    <Card>
-      <CardHeader>
+    <Card className="border border-slate-200 hover:shadow-md transition-all duration-300">
+      <CardHeader className="pb-3">
         <div className="flex justify-between items-start">
           <div>
-            <CardTitle>{application.gig.title}</CardTitle>
-            <CardDescription className="flex items-center mt-1">
+            <CardTitle className="text-xl text-primary-900">{application.gig.title}</CardTitle>
+            <CardDescription className="flex items-center mt-1 text-neutral-500">
               <Calendar className="h-3.5 w-3.5 mr-1" />
               <span>Applied on {new Date(application.createdAt).toLocaleDateString()}</span>
             </CardDescription>
           </div>
           <Badge
-            variant={
-              application.status === "pending" ? "outline" :
-              application.status === "accepted" ? "default" : "secondary"
-            }
+            variant="outline"
+            className={`font-medium ${getBadgeStyles()}`}
           >
             {application.status === "pending" ? "Pending" :
              application.status === "accepted" ? "Accepted" : "Rejected"}
           </Badge>
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="pb-4">
         <div className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="flex items-center">
-              <DollarSign className="h-4 w-4 mr-2 text-muted-foreground" />
-              <span>
+              <DollarSign className="h-4 w-4 mr-2 text-emerald-500" />
+              <span className="text-neutral-700 font-medium">
                 {application.customRate ? 
                   `Your Rate: ${application.customRate} RON` : 
                   `Budget: ${application.gig.budgetMin} - ${application.gig.budgetMax} RON`}
               </span>
             </div>
             <div className="flex items-center">
-              <MapPin className="h-4 w-4 mr-2 text-muted-foreground" />
-              <span>{application.gig.location}</span>
+              <MapPin className="h-4 w-4 mr-2 text-blue-500" />
+              <span className="text-neutral-700">{application.gig.location}</span>
             </div>
             <div className="flex items-center">
-              <Clock className="h-4 w-4 mr-2 text-muted-foreground" />
-              <span>
+              <Clock className="h-4 w-4 mr-2 text-amber-500" />
+              <span className="text-neutral-700">
                 {application.gig.urgency === "asap" && "As soon as possible"}
                 {application.gig.urgency === "within_24h" && "Within 24 hours"}
                 {application.gig.urgency === "specific_date" && 
@@ -261,28 +287,28 @@ function ApplicationCard({
           </div>
           
           <Accordion type="single" collapsible className="w-full">
-            <AccordionItem value="details">
-              <AccordionTrigger>View Job Details</AccordionTrigger>
+            <AccordionItem value="details" className="border-primary/20 focus-within:border-primary/30">
+              <AccordionTrigger className="hover:text-primary py-3 font-medium text-neutral-700">View Job Details</AccordionTrigger>
               <AccordionContent>
-                <div className="space-y-3">
+                <div className="space-y-3 pt-1">
                   <div className="flex items-center">
-                    <User className="h-4 w-4 mr-2 text-muted-foreground" />
-                    <span>Client: {application.gig.clientName}</span>
+                    <User className="h-4 w-4 mr-2 text-primary/70" />
+                    <span className="text-neutral-700 font-medium">Client: {application.gig.clientName}</span>
                   </div>
                   
                   <div>
-                    <h4 className="text-sm font-medium mb-1">Job Description:</h4>
-                    <p className="text-sm">{application.gig.description}</p>
+                    <h4 className="text-sm font-medium mb-1 text-neutral-800">Job Description:</h4>
+                    <p className="text-sm text-neutral-600">{application.gig.description}</p>
                   </div>
                   
                   {application.gig.attachments && application.gig.attachments.length > 0 && (
                     <div>
-                      <h4 className="text-sm font-medium mb-1">Attachments:</h4>
+                      <h4 className="text-sm font-medium mb-1 text-neutral-800">Attachments:</h4>
                       <div className="flex flex-wrap gap-2">
                         {application.gig.attachments.map((file, index) => (
-                          <Badge key={index} variant="outline" className="flex items-center">
+                          <Badge key={index} variant="outline" className="flex items-center bg-slate-100 text-slate-700 border-slate-200">
                             <FileText className="h-3 w-3 mr-1" />
-                            {file}
+                            {file.length > 15 ? file.substring(0, 15) + '...' : file}
                           </Badge>
                         ))}
                       </div>
@@ -292,19 +318,19 @@ function ApplicationCard({
               </AccordionContent>
             </AccordionItem>
             
-            <AccordionItem value="proposal">
-              <AccordionTrigger>Your Proposal</AccordionTrigger>
+            <AccordionItem value="proposal" className="border-primary/20 focus-within:border-primary/30">
+              <AccordionTrigger className="hover:text-primary py-3 font-medium text-neutral-700">Your Proposal</AccordionTrigger>
               <AccordionContent>
-                <p className="text-sm">{application.message}</p>
+                <p className="text-sm text-neutral-600 pt-1">{application.message}</p>
               </AccordionContent>
             </AccordionItem>
           </Accordion>
         </div>
       </CardContent>
       {application.status === "accepted" && (
-        <CardFooter>
+        <CardFooter className="pt-0 pb-4">
           <Button 
-            className="w-full flex items-center"
+            className="w-full flex items-center bg-primary hover:bg-primary/90"
             onClick={() => {
               // Navigate to chat with this client
               navigate(`/messages?client=${application.gig.clientId}`);

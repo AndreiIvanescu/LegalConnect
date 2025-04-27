@@ -205,11 +205,11 @@ export default function FindContractsPage() {
   }
 
   return (
-    <div className="container py-8">
-      <h1 className="text-2xl font-bold mb-6">Find Contracts</h1>
+    <div className="container pt-4 pb-24 md:pt-8 md:pb-8">
+      <h1 className="text-2xl font-bold mb-6 px-4 md:px-0">Find Contracts</h1>
       
       {/* Search and filters */}
-      <Card className="mb-6">
+      <Card className="mb-6 border-0 shadow-md md:border md:shadow-sm">
         <CardContent className="pt-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="md:col-span-2">
@@ -217,7 +217,7 @@ export default function FindContractsPage() {
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                 <Input
                   placeholder="Search by title, description, or location..."
-                  className="pl-10"
+                  className="pl-10 border-primary/20 focus-visible:ring-primary/30"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
@@ -226,9 +226,9 @@ export default function FindContractsPage() {
             
             <div>
               <Select value={category} onValueChange={setCategory}>
-                <SelectTrigger>
+                <SelectTrigger className="border-primary/20 focus:ring-primary/30">
                   <div className="flex items-center">
-                    <Filter className="mr-2 h-4 w-4" />
+                    <Filter className="mr-2 h-4 w-4 text-primary" />
                     {category ? (
                       category === "notary" ? "Notary" :
                       category === "judicial_executor" ? "Judicial Executor" :
@@ -248,32 +248,34 @@ export default function FindContractsPage() {
             </div>
           </div>
           
-          <Separator className="my-4" />
+          <Separator className="my-4 bg-primary/10" />
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div>
-              <label className="block text-sm font-medium mb-1">Budget Range</label>
+              <label className="block text-sm font-medium mb-2 text-neutral-700">Budget Range (RON)</label>
               <div className="flex items-center space-x-2">
                 <Input
                   type="number"
                   placeholder="Min"
                   value={budgetMin}
                   onChange={(e) => setBudgetMin(e.target.value)}
+                  className="border-primary/20 focus-visible:ring-primary/30"
                 />
-                <span>-</span>
+                <span className="text-neutral-500">—</span>
                 <Input
                   type="number"
                   placeholder="Max"
                   value={budgetMax}
                   onChange={(e) => setBudgetMax(e.target.value)}
+                  className="border-primary/20 focus-visible:ring-primary/30"
                 />
               </div>
             </div>
             
             <div>
-              <label className="block text-sm font-medium mb-1">Urgency</label>
+              <label className="block text-sm font-medium mb-2 text-neutral-700">Urgency</label>
               <Select value={urgency} onValueChange={setUrgency}>
-                <SelectTrigger>
+                <SelectTrigger className="border-primary/20 focus:ring-primary/30">
                   <SelectValue placeholder="Any urgency" />
                 </SelectTrigger>
                 <SelectContent>
@@ -286,19 +288,20 @@ export default function FindContractsPage() {
             </div>
             
             <div>
-              <label className="block text-sm font-medium mb-1">Location</label>
-              <div className="flex items-center space-x-2 h-10 pt-2">
+              <label className="block text-sm font-medium mb-2 text-neutral-700">Location</label>
+              <div className="flex items-center space-x-2 h-10 pt-1">
                 <Switch
                   id="nearby"
                   checked={onlyNearby}
                   onCheckedChange={setOnlyNearby}
+                  className="data-[state=checked]:bg-primary"
                 />
-                <Label htmlFor="nearby">Only show nearby gigs</Label>
+                <Label htmlFor="nearby" className="font-medium text-neutral-700">Only show nearby gigs</Label>
               </div>
             </div>
           </div>
           
-          <div className="mt-4 flex justify-end">
+          <div className="mt-6 flex justify-end">
             <Button onClick={() => {
               // Reset all filters
               setSearchTerm("");
@@ -307,13 +310,13 @@ export default function FindContractsPage() {
               setBudgetMax("");
               setUrgency("");
               setOnlyNearby(false);
-            }} variant="outline" className="mr-2">
+            }} variant="outline" className="mr-2 border-primary/20 text-primary hover:bg-primary/5">
               Reset Filters
             </Button>
             <Button onClick={() => {
               // Force refresh with current filters
               queryClient.invalidateQueries({ queryKey: ["/api/gigs"] });
-            }}>
+            }} className="bg-primary hover:bg-primary/90">
               Apply Filters
             </Button>
           </div>
@@ -322,7 +325,7 @@ export default function FindContractsPage() {
       
       {/* Gigs list */}
       {filteredGigs.length === 0 ? (
-        <Card>
+        <Card className="border-0 shadow-md md:border md:shadow-sm">
           <CardHeader>
             <CardTitle>No Contracts Found</CardTitle>
             <CardDescription>
@@ -330,67 +333,69 @@ export default function FindContractsPage() {
             </CardDescription>
           </CardHeader>
           <CardFooter>
-            <Button variant="outline" onClick={() => {
-              // Reset all filters
-              setSearchTerm("");
-              setCategory("");
-              setBudgetMin("");
-              setBudgetMax("");
-              setUrgency("");
-              setOnlyNearby(false);
-              
-              // Force refresh
-              queryClient.invalidateQueries({ queryKey: ["/api/gigs"] });
-            }}>
+            <Button variant="outline" 
+              className="border-primary/20 text-primary hover:bg-primary/5"
+              onClick={() => {
+                // Reset all filters
+                setSearchTerm("");
+                setCategory("");
+                setBudgetMin("");
+                setBudgetMax("");
+                setUrgency("");
+                setOnlyNearby(false);
+                
+                // Force refresh
+                queryClient.invalidateQueries({ queryKey: ["/api/gigs"] });
+              }}>
               Clear Filters
             </Button>
           </CardFooter>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 px-2 md:px-0 md:gap-6">
           {filteredGigs.map((gig) => (
-            <Card key={gig.id} className="overflow-hidden">
+            <Card key={gig.id} className="overflow-hidden border border-slate-200 hover:border-primary/30 transition-all duration-300 hover:shadow-md">
               <CardHeader className="pb-2">
                 <div className="flex justify-between items-start">
-                  <CardTitle className="text-lg">{gig.title}</CardTitle>
+                  <CardTitle className="text-lg text-primary-900">{gig.title}</CardTitle>
                   {gig.urgency === "asap" && (
-                    <Badge variant="destructive" className="ml-2">ASAP</Badge>
+                    <Badge variant="destructive" className="ml-2 bg-red-500 hover:bg-red-600">ASAP</Badge>
                   )}
                   {gig.urgency === "within_24h" && (
-                    <Badge variant="default" className="ml-2">24h</Badge>
+                    <Badge variant="default" className="ml-2 bg-amber-500 hover:bg-amber-600">24h</Badge>
                   )}
                 </div>
-                <CardDescription className="flex items-center mt-1">
-                  <CalendarDays className="h-3.5 w-3.5 mr-1 text-muted-foreground" />
+                <CardDescription className="flex items-center mt-1 text-neutral-500">
+                  <CalendarDays className="h-3.5 w-3.5 mr-1" />
                   <span>Posted {new Date(gig.createdAt).toLocaleDateString()}</span>
                 </CardDescription>
               </CardHeader>
               <CardContent className="pb-2">
                 <div className="mb-3 flex flex-wrap gap-2">
-                  <Badge variant="outline" className="flex items-center">
+                  <Badge variant="outline" className="flex items-center border-emerald-200 text-emerald-700 bg-emerald-50">
                     <DollarSign className="h-3.5 w-3.5 mr-1" />
                     {gig.budgetMin} - {gig.budgetMax} RON
                   </Badge>
-                  <Badge variant="outline" className="flex items-center">
+                  <Badge variant="outline" className="flex items-center border-blue-200 text-blue-700 bg-blue-50">
                     <MapPin className="h-3.5 w-3.5 mr-1" />
                     {gig.location} {gig.distance ? `(${gig.distance.toFixed(1)} km)` : ''}
                   </Badge>
                 </div>
                 
-                <p className="text-sm text-muted-foreground line-clamp-3 mb-3">
+                <p className="text-sm text-neutral-600 line-clamp-3 mb-3">
                   {gig.description}
                 </p>
                 
                 {gig.attachments && gig.attachments.length > 0 && (
                   <div className="mb-2 flex flex-wrap gap-1">
                     {gig.attachments.slice(0, 2).map((file, index) => (
-                      <Badge key={index} variant="secondary" className="text-xs flex items-center">
+                      <Badge key={index} variant="secondary" className="text-xs flex items-center bg-slate-100 text-slate-700">
                         <FileText className="h-3 w-3 mr-1" />
                         {file.length > 15 ? file.substring(0, 15) + '...' : file}
                       </Badge>
                     ))}
                     {gig.attachments.length > 2 && (
-                      <Badge variant="secondary" className="text-xs">
+                      <Badge variant="secondary" className="text-xs bg-slate-100 text-slate-700">
                         +{gig.attachments.length - 2} more
                       </Badge>
                     )}
@@ -399,13 +404,13 @@ export default function FindContractsPage() {
               </CardContent>
               <CardFooter className="pt-2">
                 <Button 
-                  className="w-full" 
+                  className="w-full bg-primary hover:bg-primary/90 transition-colors"
                   onClick={() => {
                     setSelectedGig(gig);
                     setDialogOpen(true);
                   }}
                 >
-                  Apply
+                  Apply Now
                 </Button>
               </CardFooter>
             </Card>
@@ -417,29 +422,42 @@ export default function FindContractsPage() {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Apply to this Contract</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-xl text-primary-900 font-semibold">Apply to this Contract</DialogTitle>
+            <DialogDescription className="text-neutral-700 font-medium">
               {selectedGig?.title}
             </DialogDescription>
           </DialogHeader>
           
+          {selectedGig && (
+            <div className="flex flex-wrap gap-2 mt-1 mb-3">
+              <Badge variant="outline" className="flex items-center border-emerald-200 text-emerald-700 bg-emerald-50">
+                <DollarSign className="h-3.5 w-3.5 mr-1" />
+                {selectedGig.budgetMin} - {selectedGig.budgetMax} RON
+              </Badge>
+              <Badge variant="outline" className="flex items-center border-blue-200 text-blue-700 bg-blue-50">
+                <MapPin className="h-3.5 w-3.5 mr-1" />
+                {selectedGig.location}
+              </Badge>
+            </div>
+          )}
+          
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="proposal">Your Proposal</Label>
+              <Label htmlFor="proposal" className="text-neutral-800 font-medium">Your Proposal</Label>
               <Textarea 
                 id="proposal"
                 placeholder="Explain why you're a good fit for this job..."
-                className="min-h-32"
+                className="min-h-32 border-primary/20 focus-visible:ring-primary/30"
                 value={proposalMessage}
                 onChange={(e) => setProposalMessage(e.target.value)}
               />
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-neutral-500">
                 Be specific about your qualifications and how you can help with this request.
               </p>
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="rate">Custom Rate (Optional)</Label>
+              <Label htmlFor="rate" className="text-neutral-800 font-medium">Custom Rate (Optional)</Label>
               <div className="flex items-center">
                 <Input 
                   id="rate"
@@ -447,25 +465,36 @@ export default function FindContractsPage() {
                   placeholder="Enter your rate"
                   value={customRate}
                   onChange={(e) => setCustomRate(e.target.value)}
+                  className="border-primary/20 focus-visible:ring-primary/30"
                 />
-                <span className="ml-2">RON</span>
+                <span className="ml-2 text-neutral-600 font-medium">RON</span>
               </div>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-neutral-500">
                 Leave empty to negotiate the rate based on client's budget.
               </p>
             </div>
           </div>
           
-          <DialogFooter>
-            <Button type="button" variant="secondary" onClick={() => setDialogOpen(false)}>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={() => setDialogOpen(false)}
+              className="border-primary/20 text-primary hover:bg-primary/5"
+            >
               Cancel
             </Button>
             <Button 
               type="submit" 
               onClick={handleApply}
               disabled={applyMutation.isPending || !proposalMessage.trim()}
+              className="bg-primary hover:bg-primary/90"
             >
-              {applyMutation.isPending ? "Sending..." : "Send Application"}
+              {applyMutation.isPending ? (
+                <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Sending...</>
+              ) : (
+                "Send Application"
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
