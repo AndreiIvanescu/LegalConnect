@@ -33,7 +33,7 @@ export default function ProfilePage() {
   const { toast } = useToast();
   const [location, navigate] = useLocation();
   const [activeTab, setActiveTab] = useState("profile");
-  
+
   // For profile editing
   const [isEditing, setIsEditing] = useState(false);
   const [fullName, setFullName] = useState(user?.fullName || "");
@@ -41,24 +41,24 @@ export default function ProfilePage() {
   const [phone, setPhone] = useState(user?.phone || "");
   const [city, setCity] = useState(user?.city || "");
   const [country, setCountry] = useState(user?.country || "");
-  
+
   // For provider profile
   const { data: providerProfile } = useQuery({
     queryKey: ['/api/profile/provider'],
     enabled: user?.role === 'provider',
   });
-  
+
   // For account history (bookings, reviews)
   const { data: bookingHistory } = useQuery({
     queryKey: ['/api/bookings/history'],
     enabled: !!user,
   });
-  
+
   const { data: reviewsReceived } = useQuery({
     queryKey: ['/api/reviews/received'],
     enabled: user?.role === 'provider',
   });
-  
+
   const handleSaveProfile = () => {
     // Would make a mutation to update profile
     toast({
@@ -67,13 +67,13 @@ export default function ProfilePage() {
     });
     setIsEditing(false);
   };
-  
+
   if (!user) {
     return (
       <>
         <MobileHeader />
         <DesktopHeader />
-        
+
         <main className="pt-14 md:pt-20 pb-20 md:pb-10 flex justify-center items-center">
           <div className="text-center p-6">
             <h1 className="text-2xl font-bold mb-2">Please login</h1>
@@ -83,24 +83,24 @@ export default function ProfilePage() {
             </Button>
           </div>
         </main>
-        
+
         <MobileBottomNav />
       </>
     );
   }
-  
+
   return (
     <>
       <MobileHeader />
       <DesktopHeader />
-      
+
       <main className="pt-14 md:pt-20 pb-20 md:pb-10">
         <div className="container mx-auto px-4 py-6">
           <div className="mb-6">
             <h1 className="text-2xl font-semibold">My Profile</h1>
             <p className="text-neutral-600">Manage your account and settings</p>
           </div>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             {/* Sidebar */}
             <div className="md:col-span-1">
@@ -115,7 +115,7 @@ export default function ProfilePage() {
                     <h2 className="text-lg font-semibold">{user.fullName}</h2>
                     <p className="text-neutral-600">{user.role === 'provider' ? 'Service Provider' : 'Client'}</p>
                   </div>
-                  
+
                   <nav className="space-y-1">
                     <Button 
                       variant={activeTab === 'profile' ? 'default' : 'ghost'} 
@@ -165,7 +165,9 @@ export default function ProfilePage() {
                     <Button 
                       variant="ghost" 
                       className="w-full justify-start text-red-500 hover:text-red-500 hover:bg-red-50"
-                      onClick={() => logoutMutation.mutate()}
+                      onClick={() => logoutMutation.mutate(undefined, {
+                        onSuccess: () => navigate('/')
+                      })}
                     >
                       Logout
                     </Button>
@@ -173,7 +175,7 @@ export default function ProfilePage() {
                 </CardContent>
               </Card>
             </div>
-            
+
             {/* Main Content */}
             <div className="md:col-span-3">
               <Card>
@@ -288,7 +290,7 @@ export default function ProfilePage() {
                       )}
                     </>
                   )}
-                  
+
                   {/* Provider Profile Tab */}
                   {activeTab === 'providerProfile' && user.role === 'provider' && (
                     <>
@@ -300,7 +302,7 @@ export default function ProfilePage() {
                               {providerProfile.description || 'No description provided.'}
                             </p>
                           </div>
-                          
+
                           <div>
                             <h3 className="text-lg font-medium mb-2">Specializations</h3>
                             <div className="flex flex-wrap gap-2">
@@ -314,7 +316,7 @@ export default function ProfilePage() {
                               )}
                             </div>
                           </div>
-                          
+
                           <div>
                             <h3 className="text-lg font-medium mb-2">Services</h3>
                             {providerProfile.services?.length > 0 ? (
@@ -335,7 +337,7 @@ export default function ProfilePage() {
                               <p className="text-neutral-500">No services added yet.</p>
                             )}
                           </div>
-                          
+
                           <div className="flex justify-end">
                             <Button onClick={() => navigate('/profile/setup')}>Edit Provider Profile</Button>
                           </div>
@@ -351,7 +353,7 @@ export default function ProfilePage() {
                       )}
                     </>
                   )}
-                  
+
                   {/* History Tab */}
                   {activeTab === 'history' && (
                     <div>
@@ -360,7 +362,7 @@ export default function ProfilePage() {
                           <TabsTrigger value="bookings">Bookings</TabsTrigger>
                           <TabsTrigger value="payments">Payments</TabsTrigger>
                         </TabsList>
-                        
+
                         <TabsContent value="bookings">
                           {bookingHistory && bookingHistory.length > 0 ? (
                             <div className="space-y-4">
@@ -410,7 +412,7 @@ export default function ProfilePage() {
                             </div>
                           )}
                         </TabsContent>
-                        
+
                         <TabsContent value="payments">
                           <div className="text-center py-8">
                             <p className="text-neutral-500">Your payment history will appear here.</p>
@@ -419,7 +421,7 @@ export default function ProfilePage() {
                       </Tabs>
                     </div>
                   )}
-                  
+
                   {/* Reviews Tab */}
                   {activeTab === 'reviews' && user.role === 'provider' && (
                     <div>
@@ -467,7 +469,7 @@ export default function ProfilePage() {
                       )}
                     </div>
                   )}
-                  
+
                   {/* Settings Tab */}
                   {activeTab === 'settings' && (
                     <div className="space-y-6">
@@ -479,7 +481,7 @@ export default function ProfilePage() {
                             <Input id="username" value={user.username} disabled />
                             <p className="text-xs text-neutral-500 mt-1">Username cannot be changed.</p>
                           </div>
-                          
+
                           <div>
                             <Label htmlFor="password">Password</Label>
                             <Input id="password" type="password" value="••••••••" disabled />
@@ -489,27 +491,27 @@ export default function ProfilePage() {
                           </div>
                         </div>
                       </div>
-                      
+
                       <Separator />
-                      
+
                       <div>
                         <h3 className="text-lg font-medium mb-4">Notification Settings</h3>
                         <div className="space-y-4">
                           {/* Notification settings would go here */}
                         </div>
                       </div>
-                      
+
                       <Separator />
-                      
+
                       <div>
                         <h3 className="text-lg font-medium mb-4">Privacy Settings</h3>
                         <div className="space-y-4">
                           {/* Privacy settings would go here */}
                         </div>
                       </div>
-                      
+
                       <Separator />
-                      
+
                       <div>
                         <h3 className="text-lg font-medium text-red-600 mb-4">Danger Zone</h3>
                         <p className="text-sm text-neutral-600 mb-4">
@@ -548,7 +550,7 @@ export default function ProfilePage() {
           </div>
         </div>
       </main>
-      
+
       <MobileBottomNav />
     </>
   );
