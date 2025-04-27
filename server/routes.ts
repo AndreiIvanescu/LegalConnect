@@ -565,6 +565,100 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // JOB POSTING ROUTES
+  // Handle legacy /api/gigs endpoint (redirects to /api/jobs)
+  app.post("/api/gigs", async (req, res) => {
+    if (!req.isAuthenticated() || req.user.role !== 'client') {
+      return res.status(403).json({ message: "Only clients can create job postings" });
+    }
+    
+    try {
+      const validatedData = insertJobPostingSchema.parse({
+        ...req.body,
+        clientId: req.user.id,
+        status: 'open',
+      });
+      
+      const jobPosting = await storage.createJobPosting(validatedData);
+      res.status(201).json(jobPosting);
+    } catch (error) {
+      res.status(400).json({ message: error instanceof Error ? error.message : "Invalid data" });
+    }
+  });
+  
+  // Get client's gigs
+  app.get("/api/gigs/client", async (req, res) => {
+    if (!req.isAuthenticated() || req.user.role !== 'client') {
+      return res.status(403).json({ message: "Only clients can view their job postings" });
+    }
+    
+    try {
+      const jobPostings = await storage.getJobPostingsByClientId(req.user.id);
+      res.json(jobPostings);
+    } catch (error) {
+      console.error("Error fetching job postings:", error);
+      res.status(500).json({ message: "Failed to fetch job postings" });
+    }
+  });
+  
+  // Update gig application status
+  app.patch("/api/gigs/:id/applications/:applicationId", async (req, res) => {
+    if (!req.isAuthenticated() || req.user.role !== 'client') {
+      return res.status(403).json({ message: "Only clients can update application status" });
+    }
+
+    try {
+      const applicationId = parseInt(req.params.applicationId);
+      const application = await storage.getJobApplicationById(applicationId);
+      
+      if (!application) {
+        return res.status(404).json({ message: "Application not found" });
+      }
+      
+      // Check if job belongs to the client
+      const jobPosting = await storage.getJobPostingById(application.jobId);
+      
+      if (!jobPosting || jobPosting.clientId !== req.user.id) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      
+      // If application is accepted, update job posting status to assigned
+      if (req.body.status === 'accepted') {
+        await storage.updateJobPosting(jobPosting.id, { status: 'assigned' });
+      }
+      
+      const updatedApplication = await storage.updateJobApplication(applicationId, req.body);
+      res.json(updatedApplication);
+    } catch (error) {
+      res.status(400).json({ message: error instanceof Error ? error.message : "Invalid data" });
+    }
+  });
+  
+  // Delete a gig
+  app.delete("/api/gigs/:id", async (req, res) => {
+    if (!req.isAuthenticated() || req.user.role !== 'client') {
+      return res.status(403).json({ message: "Only clients can delete job postings" });
+    }
+    
+    try {
+      const jobId = parseInt(req.params.id);
+      const jobPosting = await storage.getJobPostingById(jobId);
+      
+      if (!jobPosting) {
+        return res.status(404).json({ message: "Job posting not found" });
+      }
+      
+      if (jobPosting.clientId !== req.user.id) {
+        return res.status(403).json({ message: "You don't have permission to delete this job posting" });
+      }
+      
+      await storage.deleteJobPosting(jobId);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting job posting:", error);
+      res.status(500).json({ message: "Failed to delete job posting" });
+    }
+  });
+  
   // Create a job posting
   app.post("/api/jobs", async (req, res) => {
     if (!req.isAuthenticated() || req.user.role !== 'client') {

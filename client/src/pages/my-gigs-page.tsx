@@ -78,9 +78,9 @@ export default function MyGigsPage() {
   
   // Fetch user's gigs
   const { data: gigs, isLoading, isError } = useQuery<Gig[]>({
-    queryKey: ["/api/users/me/gigs"],
+    queryKey: ["/api/jobs/my"],
     queryFn: async () => {
-      const response = await apiRequest("GET", "/api/gigs/client");
+      const response = await apiRequest("GET", "/api/jobs/my");
       return response.json();
     }
   });
@@ -88,14 +88,14 @@ export default function MyGigsPage() {
   // Delete gig mutation
   const deleteMutation = useMutation({
     mutationFn: async (gigId: number) => {
-      await apiRequest("DELETE", `/api/gigs/${gigId}`);
+      await apiRequest("DELETE", `/api/jobs/${gigId}`);
     },
     onSuccess: () => {
       toast({
         title: "Gig Deleted",
         description: "Your gig has been successfully cancelled.",
       });
-      queryClient.invalidateQueries({ queryKey: ["/api/users/me/gigs"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/jobs/my"] });
       setGigToDelete(null);
     },
     onError: (error: Error) => {
@@ -110,14 +110,14 @@ export default function MyGigsPage() {
   // Accept application mutation
   const acceptApplicationMutation = useMutation({
     mutationFn: async ({ gigId, applicationId }: { gigId: number, applicationId: number }) => {
-      await apiRequest("PATCH", `/api/gigs/${gigId}/applications/${applicationId}`, { status: "accepted" });
+      await apiRequest("PATCH", `/api/jobs/${gigId}/applications/${applicationId}`, { status: "accepted" });
     },
     onSuccess: () => {
       toast({
         title: "Application Accepted",
         description: "You have accepted this provider's application. They have been notified.",
       });
-      queryClient.invalidateQueries({ queryKey: ["/api/users/me/gigs"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/jobs/my"] });
     },
     onError: (error: Error) => {
       toast({
@@ -160,7 +160,7 @@ export default function MyGigsPage() {
             <CardDescription>Failed to load your gigs. Please try again later.</CardDescription>
           </CardHeader>
           <CardFooter>
-            <Button onClick={() => queryClient.invalidateQueries({ queryKey: ["/api/users/me/gigs"] })}>
+            <Button onClick={() => queryClient.invalidateQueries({ queryKey: ["/api/jobs/my"] })}>
               Retry
             </Button>
           </CardFooter>
