@@ -1,13 +1,31 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useLocation } from "wouter";
 import SearchFilters from "@/components/search/search-filters";
 import ProviderList from "@/components/providers/provider-list";
 import MobileHeader from "@/components/layout/mobile-header";
 import DesktopHeader from "@/components/layout/desktop-header";
 import MobileBottomNav from "@/components/layout/mobile-bottom-nav";
+import { useAuth } from "@/hooks/use-auth";
+import { Redirect } from "wouter";
 
 export default function HomePage() {
+  const { user } = useAuth();
+  const [, navigate] = useLocation();
   const [searchFilters, setSearchFilters] = useState({});
   const [locationName, setLocationName] = useState("Romania");
+  
+  // For providers, redirect to find-contracts page automatically
+  useEffect(() => {
+    if (user && user.role === 'provider') {
+      console.log("Provider detected on home page, redirecting to find-contracts");
+      navigate("/find-contracts");
+    }
+  }, [user, navigate]);
+  
+  // If user is a provider, redirect them to the contracts page
+  if (user && user.role === 'provider') {
+    return <Redirect to="/find-contracts" />;
+  }
   
   const handleSearch = (filters: any) => {
     setSearchFilters(filters);
