@@ -60,9 +60,10 @@ interface Gig {
 }
 
 // Helper function to format budget values
+// Don't round or format the budget value, just return it as is
 const formatBudget = (value: number | undefined | null): string => {
   if (value === undefined || value === null) return "0";
-  return value.toLocaleString();
+  return value.toString();
 };
 
 export default function MyGigsPage() {

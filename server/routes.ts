@@ -848,31 +848,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log("Updating job posting ID:", jobId, "with data:", req.body);
       
-      // Extract the budget values entered by the user
-      let budgetMin = req.body.budgetMin ? parseFloat(req.body.budgetMin) : undefined;
-      let budgetMax = req.body.budgetMax ? parseFloat(req.body.budgetMax) : undefined;
+      // IMPORTANT: Use the exact budget values provided by the user
+      const budgetMin = req.body.budgetMin ? parseInt(req.body.budgetMin) : undefined;
+      const budgetMax = req.body.budgetMax ? parseInt(req.body.budgetMax) : undefined;
       
-      // If we have budgetMax but not budgetMin, set budgetMin to 80% of budgetMax
-      if (budgetMax && !budgetMin) {
-        budgetMin = Math.round(budgetMax * 0.8);
-      }
-      
-      // If we have budgetMin but not budgetMax, set budgetMax to budgetMin
-      if (budgetMin && !budgetMax) {
-        budgetMax = budgetMin;
-      }
-      
-      // Store the maximum budget in the database budget field (in cents/bani)
+      // Calculate budget in cents/bani only if budgetMax is provided
       let budget;
-      if (req.body.budget) {
-        // If budget is directly provided, use it
-        budget = Math.round(parseFloat(req.body.budget));
-      } else if (budgetMax) {
-        // Otherwise calculate from budgetMax 
-        budget = Math.round(budgetMax * 100);
+      if (budgetMax) {
+        budget = budgetMax * 100; // Convert RON to bani
       }
       
-      console.log(`Update budget values: min=${budgetMin}, max=${budgetMax}, stored=${budget}`);
+      console.log(`Exact update budget values: min=${budgetMin}, max=${budgetMax}, stored=${budget}`);
       
       // Only include fields that exist in the database schema
       const updateData: any = {
@@ -897,21 +883,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const updatedJobPosting = await storage.updateJobPosting(jobId, updateData);
       
-      // Add the budget values to the response for display in UI
-      const budgetInRON = Math.round((updatedJobPosting.budget || 0) / 100);
-      const calculatedBudgetMin = Math.floor(budgetInRON * 0.8);
-      
+      // Use the EXACT values provided by the user for the frontend display
       const enhancedJobPosting = {
         ...updatedJobPosting,
-        budgetMin: budgetMin || calculatedBudgetMin,
-        budgetMax: budgetMax || budgetInRON,
-        displayPrice: `${budgetMin || calculatedBudgetMin} - ${budgetMax || budgetInRON} RON`,
+        budgetMin: budgetMin,
+        budgetMax: budgetMax,
+        displayPrice: `${budgetMin} - ${budgetMax} RON`,
         // Include URL-safe title for client-side routing
         slugTitle: updatedJobPosting.title.toLowerCase().replace(/[^\w ]+/g, '').replace(/ +/g, '-'),
         displayUrgency: updatedJobPosting.urgency === 'asap' ? 'ASAP' : updatedJobPosting.urgency
       };
       
-      console.log("Returning updated job posting:", enhancedJobPosting);
+      console.log("Returning exact budget values in updated job posting:", enhancedJobPosting);
       
       res.json(enhancedJobPosting);
     } catch (error) {
