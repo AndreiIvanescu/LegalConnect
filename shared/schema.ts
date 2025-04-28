@@ -108,8 +108,6 @@ export const jobPostings = pgTable("job_postings", {
   providerType: providerTypeEnum("provider_type").notNull(),
   priceType: text("price_type").notNull(), // fixed, hourly
   budget: integer("budget"), // in smallest currency unit (bani/cents)
-  budgetMin: integer("budget_min"), // as displayed to user
-  budgetMax: integer("budget_max"), // as displayed to user
   hourlyRate: integer("hourly_rate"), // in smallest currency unit (bani/cents)
   location: text("location"),
   latitude: real("latitude"),
@@ -119,7 +117,6 @@ export const jobPostings = pgTable("job_postings", {
   status: jobStatusEnum("status").notNull().default('open'),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
-  metadata: text("metadata"), // JSON string for additional data like original budget values
 });
 
 // Job applications (providers applying for jobs)

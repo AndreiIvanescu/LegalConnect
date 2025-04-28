@@ -703,30 +703,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       console.log("Creating job posting with data:", req.body);
       
-      // Extract and save the original budget values entered by the user
+      // Extract the original budget values entered by the user
       const budgetMin = req.body.budgetMin ? parseFloat(req.body.budgetMin) : undefined;
       const budgetMax = req.body.budgetMax ? parseFloat(req.body.budgetMax) : undefined;
       
       // Manually map the form fields to match the expected schema
+      // Only include fields that exist in the database
       const data = {
         title: req.body.title,
         description: req.body.description,
         providerType: req.body.providerType || req.body.category, // Accept either field
         priceType: req.body.priceType || 'fixed', // Default to fixed
-        // Use budget directly if provided, or calculate from min/max
+        // Use budget directly if provided, or calculate from max
         budget: req.body.budget || 
-                (req.body.budgetMax ? parseFloat(String(req.body.budgetMax)) * 100 : 0),
+                (budgetMax ? Math.round(budgetMax * 100) : 0), // Convert to cents/bani
         location: req.body.location,
         urgency: req.body.urgency,
         deadline: req.body.specificDate,
         clientId: req.user.id,
         status: 'open',
-        // Store the original budget values in the metadata field if available
-        metadata: JSON.stringify({
-          budgetMin,
-          budgetMax,
-          attachments: req.body.attachments
-        }),
       };
       
       // Validate transformed data
@@ -735,7 +730,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Create the job posting
       const jobPosting = await storage.createJobPosting(validatedData);
       
-      // Add the original budget values to the response
+      // Add the original budget values to the response for display in UI
       const enhancedJobPosting = {
         ...jobPosting,
         budgetMin,
@@ -762,32 +757,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Add frontend-specific fields for rendering in the UI
       const enhancedJobPostings = jobPostings.map(job => {
-        try {
-          // Try to parse metadata field if it exists
-          if (job.metadata) {
-            try {
-              const metadataObj = JSON.parse(job.metadata as string);
-              if (metadataObj.budgetMin !== undefined && metadataObj.budgetMax !== undefined) {
-                return {
-                  ...job,
-                  budgetMin: metadataObj.budgetMin,
-                  budgetMax: metadataObj.budgetMax,
-                };
-              }
-            } catch (e) {
-              console.error("Failed to parse metadata:", e);
-            }
-          }
-        } catch (e) {
-          console.error("Error processing job metadata:", e);
-        }
-        
-        // Calculate from the budget field as fallback
+        // Calculate the budgetMin and budgetMax values from the budget field
+        // Budget is stored in bani/cents, so divide by 100 to get RON
         const budgetInRON = Math.round((job.budget || 0) / 100);
+        
         return {
           ...job,
-          budgetMin: Math.round(budgetInRON * 0.8),
+          budgetMin: Math.round(budgetInRON * 0.8), // 80% of the budget
           budgetMax: budgetInRON,
+          // Include URL-safe title for client-side routing
+          slugTitle: job.title.toLowerCase().replace(/[^\w ]+/g, '').replace(/ +/g, '-')
         };
       });
       
@@ -883,7 +862,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`Finding job postings for provider type: ${providerType}`);
       
-      // Get job postings for this provider type - uncommenting this from the previous code
+      // Get job postings for this provider type
       const jobPostings = await storage.getJobPostingsByProviderType(providerType);
       
       console.log(`Found ${jobPostings.length} job postings for provider type ${providerType}`);
@@ -893,19 +872,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Calculate from the budget field
         const budgetInRON = Math.round((job.budget || 0) / 100);
         
-        // For budgetMin and budgetMax, use the actual fields if they exist
-        const budgetMin = job.budgetMin !== undefined && job.budgetMin !== null 
-          ? job.budgetMin 
-          : Math.round(budgetInRON * 0.8);
-          
-        const budgetMax = job.budgetMax !== undefined && job.budgetMax !== null 
-          ? job.budgetMax 
-          : budgetInRON;
-          
         return {
           ...job,
-          budgetMin,
-          budgetMax,
+          budgetMin: Math.round(budgetInRON * 0.8), // 80% of the budget
+          budgetMax: budgetInRON,
+          // Include URL-safe title for client-side routing
+          slugTitle: job.title.toLowerCase().replace(/[^\w ]+/g, '').replace(/ +/g, '-')
         };
       });
       
@@ -939,19 +911,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const jobPostings = await storage.getNearbyJobPostings(lat, lng, distance);
       
-      // Add frontend-specific fields for rendering in the UI if not already present
+      console.log(`Found ${jobPostings.length} nearby job postings within ${distance}m of (${lat}, ${lng})`);
+      
+      // Add frontend-specific fields for rendering in the UI
       const enhancedJobPostings = jobPostings.map(job => {
-        // If budgetMin and budgetMax already exist as properties, use those values
-        if ('budgetMin' in job && 'budgetMax' in job) {
-          return job;
-        }
-        
-        // Otherwise, calculate from the budget field
+        // Calculate from the budget field
         const budgetInRON = Math.round((job.budget || 0) / 100);
+        
         return {
           ...job,
-          budgetMin: Math.round(budgetInRON * 0.8),
+          budgetMin: Math.round(budgetInRON * 0.8), // 80% of the budget
           budgetMax: budgetInRON,
+          // Include URL-safe title for client-side routing
+          slugTitle: job.title.toLowerCase().replace(/[^\w ]+/g, '').replace(/ +/g, '-')
         };
       });
       
