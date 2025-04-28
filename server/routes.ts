@@ -708,22 +708,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const budgetMin = req.body.budgetMin ? parseInt(req.body.budgetMin) : undefined;
       const budgetMax = req.body.budgetMax ? parseInt(req.body.budgetMax) : undefined;
       
-      // Store exact budgetMin and budgetMax values in the metadata JSON field
-      const metadata = {
-        exact_budget_min: budgetMin,
-        exact_budget_max: budgetMax
-      };
-      
       // Store the maximum budget in the database budget field (in cents/bani)
       const budget = budgetMax ? budgetMax * 100 : 0; // Convert RON to bani
       
       console.log(`EXACT budget values: min=${budgetMin}, max=${budgetMax}, stored=${budget}`);
       
+      // CRITICAL FIX: Add a hidden marker with exact budget values to the description
+      // This way we can retrieve the exact values later without schema changes
+      const originalDescription = req.body.description || '';
+      const budgetMarker = budgetMin && budgetMax ? 
+        `<!--BUDGET:${budgetMin}-${budgetMax}-->` : '';
+      const enhancedDescription = `${originalDescription}\n${budgetMarker}`;
+      
       // Manually map the form fields to match the expected schema
       // Only include fields that exist in the database
       const data = {
         title: req.body.title,
-        description: req.body.description,
+        description: enhancedDescription, // Store description with hidden budget marker
         providerType: req.body.providerType || req.body.category, // Accept either field
         priceType: req.body.priceType || 'fixed', // Default to fixed
         budget: budget, // Store budget in bani/cents
@@ -732,7 +733,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         deadline: req.body.specificDate,
         clientId: req.user.id,
         status: 'open',
-        metadata: metadata, // Store the exact budget values in metadata
       };
       
       // Validate transformed data
@@ -770,20 +770,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`Found ${jobPostings.length} job postings for client ${req.user.id}`);
       
-      // Add frontend-specific fields for rendering in the UI without recalculating
+      // Add frontend-specific fields for rendering in the UI with EXACT values
       const enhancedJobPostings = jobPostings.map(job => {
-        // Budget is stored in bani/cents, so divide by 100 to get RON
-        // DO NOT RECALCULATE or adjust the values - use exact values
-        const budgetInRON = Math.round((job.budget || 0) / 100);
+        // Try to extract exact budget values from description first
+        const descriptionText = job.description || '';
+        const budgetMarkerRegex = /<!--BUDGET:(\d+)-(\d+)-->/;
+        const budgetMarkerMatch = descriptionText.match(budgetMarkerRegex);
         
-        // Create a consistent object to return to frontend
+        let budgetMin, budgetMax;
+        
+        if (budgetMarkerMatch && budgetMarkerMatch.length === 3) {
+          // If marker found, use the exact values
+          budgetMin = parseInt(budgetMarkerMatch[1]);
+          budgetMax = parseInt(budgetMarkerMatch[2]);
+          console.log(`Found exact budget values in description: ${budgetMin}-${budgetMax}`);
+        } else {
+          // Fall back to calculated values based on stored budget
+          const budgetInRON = Math.round((job.budget || 0) / 100);
+          budgetMin = Math.round(budgetInRON * 0.8);
+          budgetMax = budgetInRON;
+        }
+        
+        // Return the job with the exact budget values (from marker or calculated)
         return {
           ...job,
-          // Keep the exact same values for budget min/max, use Math.round for clean integers
-          budgetMin: Math.round(budgetInRON * 0.8),
-          budgetMax: budgetInRON,
-          // Display the exact price as integer values
-          displayPrice: `${Math.round(budgetInRON * 0.8)} - ${budgetInRON} RON`,
+          budgetMin,
+          budgetMax,
+          // Use the exact price as integer values
+          displayPrice: `${budgetMin} - ${budgetMax} RON`,
           // Include URL-safe title for client-side routing
           slugTitle: job.title.toLowerCase().replace(/[^\w ]+/g, '').replace(/ +/g, '-'),
           displayUrgency: job.urgency === 'asap' ? 'ASAP' : job.urgency
@@ -807,15 +821,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Job posting not found" });
       }
       
-      // Add budgetMin and budgetMax for the frontend without recalculating values
-      const budgetInRON = Math.round((jobPosting.budget || 0) / 100);
+      // CRITICAL CHANGE: Extract exact budget values from the jobPosting's raw description
+      // This is a hack to preserve exact budget values without changing the schema
+      const descriptionText = jobPosting.description || '';
       
-      // Use consistent values with the other endpoints
+      // Try to find a hidden budget marker in the description (added by POST/PATCH)
+      const budgetMarkerRegex = /<!--BUDGET:(\d+)-(\d+)-->/;
+      const budgetMarkerMatch = descriptionText.match(budgetMarkerRegex);
+      
+      let budgetMin, budgetMax;
+      
+      if (budgetMarkerMatch && budgetMarkerMatch.length === 3) {
+        // If marker found, use the exact values
+        budgetMin = parseInt(budgetMarkerMatch[1]);
+        budgetMax = parseInt(budgetMarkerMatch[2]);
+        console.log(`Found exact budget values in description: ${budgetMin}-${budgetMax}`);
+      } else {
+        // Fall back to calculated values based on stored budget
+        const budgetInRON = Math.round((jobPosting.budget || 0) / 100);
+        budgetMin = Math.round(budgetInRON * 0.8);
+        budgetMax = budgetInRON;
+      }
+      
+      // Use the exact or calculated values
       const enhancedJob = {
         ...jobPosting,
-        budgetMin: Math.round(budgetInRON * 0.8),
-        budgetMax: budgetInRON,
-        displayPrice: `${Math.round(budgetInRON * 0.8)} - ${budgetInRON} RON`,
+        budgetMin,
+        budgetMax,
+        displayPrice: `${budgetMin} - ${budgetMax} RON`,
         slugTitle: jobPosting.title.toLowerCase().replace(/[^\w ]+/g, '').replace(/ +/g, '-'),
         displayUrgency: jobPosting.urgency === 'asap' ? 'ASAP' : jobPosting.urgency
       };
@@ -856,22 +889,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
         budget = budgetMax * 100; // Convert RON to bani
       }
       
-      // Store exact budgetMin and budgetMax values in the metadata JSON field
-      const metadata = {
-        exact_budget_min: budgetMin,
-        exact_budget_max: budgetMax
-      };
-      
       console.log(`Exact update budget values: min=${budgetMin}, max=${budgetMax}, stored=${budget}`);
+      
+      // CRITICAL FIX: Add a hidden marker with exact budget values to the description
+      // This way we can retrieve the exact values later without schema changes
+      const originalDescription = req.body.description || '';
+      
+      // Clean any existing budget markers first to avoid duplication
+      const cleanDescription = originalDescription.replace(/<!--BUDGET:\d+-\d+-->/g, '').trim();
+      
+      // Add a new budget marker with the updated values
+      const budgetMarker = budgetMin && budgetMax ? 
+        `\n<!--BUDGET:${budgetMin}-${budgetMax}-->` : '';
+      const enhancedDescription = `${cleanDescription}${budgetMarker}`;
       
       // Include fields that exist in the database schema
       const updateData: any = {
         title: req.body.title,
-        description: req.body.description,
+        description: enhancedDescription, // Store description with hidden budget marker
         providerType: req.body.providerType || req.body.category,
         location: req.body.location,
         urgency: req.body.urgency,
-        metadata: metadata, // Store exact budget values in metadata field
       };
       
       // Handle optional fields
@@ -951,15 +989,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Add frontend-specific fields with EXACT values
       const enhancedJobPostings = jobPostings.map(job => {
-        // Calculate budget in RON from bani/cents
-        const budgetInRON = Math.round((job.budget || 0) / 100);
+        // Try to extract exact budget values from description first
+        const descriptionText = job.description || '';
+        const budgetMarkerRegex = /<!--BUDGET:(\d+)-(\d+)-->/;
+        const budgetMarkerMatch = descriptionText.match(budgetMarkerRegex);
+        
+        let budgetMin, budgetMax;
+        
+        if (budgetMarkerMatch && budgetMarkerMatch.length === 3) {
+          // If marker found, use the exact values
+          budgetMin = parseInt(budgetMarkerMatch[1]);
+          budgetMax = parseInt(budgetMarkerMatch[2]);
+          console.log(`Found exact budget values in description: ${budgetMin}-${budgetMax}`);
+        } else {
+          // Fall back to calculated values based on stored budget
+          const budgetInRON = Math.round((job.budget || 0) / 100);
+          budgetMin = Math.round(budgetInRON * 0.8);
+          budgetMax = budgetInRON;
+        }
         
         return {
           ...job,
-          // Use exact integer values for consistency
-          budgetMin: Math.round(budgetInRON * 0.8), 
-          budgetMax: budgetInRON,
-          displayPrice: `${Math.round(budgetInRON * 0.8)} - ${budgetInRON} RON`,
+          budgetMin, 
+          budgetMax,
+          displayPrice: `${budgetMin} - ${budgetMax} RON`,
           // Include URL-safe title for client-side routing
           slugTitle: job.title.toLowerCase().replace(/[^\w ]+/g, '').replace(/ +/g, '-'),
           displayUrgency: job.urgency === 'asap' ? 'ASAP' : job.urgency
