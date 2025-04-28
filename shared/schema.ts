@@ -109,12 +109,17 @@ export const jobPostings = pgTable("job_postings", {
   priceType: text("price_type").notNull(), // fixed, hourly
   budget: integer("budget"), // in smallest currency unit (bani/cents)
   hourlyRate: integer("hourly_rate"), // in smallest currency unit (bani/cents)
+  // Keep these commented out as we don't want to change the schema
+  // budgetMin: integer("budget_min"), // exact user-entered min budget in RON (not bani/cents)
+  // budgetMax: integer("budget_max"), // exact user-entered max budget in RON (not bani/cents)
   location: text("location"),
   latitude: real("latitude"),
   longitude: real("longitude"),
   urgency: text("urgency"), // normal, urgent, very urgent
   deadline: timestamp("deadline"),
   status: jobStatusEnum("status").notNull().default('open'),
+  // Add a metadata field for storing custom data without changing the schema
+  metadata: json("metadata"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

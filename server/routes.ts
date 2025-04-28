@@ -704,9 +704,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       console.log("Creating job posting with data:", req.body);
       
-      // IMPORTANT: Use the exact integer budget values provided by the user
-      const budgetMin = req.body.budgetMin ? Math.round(parseInt(req.body.budgetMin)) : undefined;
-      const budgetMax = req.body.budgetMax ? Math.round(parseInt(req.body.budgetMax)) : undefined;
+      // Get the EXACT integer budget values provided by the user without any modifications
+      const budgetMin = req.body.budgetMin ? parseInt(req.body.budgetMin) : undefined;
+      const budgetMax = req.body.budgetMax ? parseInt(req.body.budgetMax) : undefined;
+      
+      // Store exact budgetMin and budgetMax values in the metadata JSON field
+      const metadata = {
+        exact_budget_min: budgetMin,
+        exact_budget_max: budgetMax
+      };
       
       // Store the maximum budget in the database budget field (in cents/bani)
       const budget = budgetMax ? budgetMax * 100 : 0; // Convert RON to bani
@@ -726,6 +732,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         deadline: req.body.specificDate,
         clientId: req.user.id,
         status: 'open',
+        metadata: metadata, // Store the exact budget values in metadata
       };
       
       // Validate transformed data
@@ -839,15 +846,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log("Updating job posting ID:", jobId, "with data:", req.body);
       
-      // IMPORTANT: Use the exact integer budget values provided by the user
-      const budgetMin = req.body.budgetMin ? Math.round(parseInt(req.body.budgetMin)) : undefined;
-      const budgetMax = req.body.budgetMax ? Math.round(parseInt(req.body.budgetMax)) : undefined;
+      // Get the EXACT integer budget values provided by the user without any modifications
+      const budgetMin = req.body.budgetMin ? parseInt(req.body.budgetMin) : undefined;
+      const budgetMax = req.body.budgetMax ? parseInt(req.body.budgetMax) : undefined;
       
       // Calculate budget in cents/bani only if budgetMax is provided
       let budget;
       if (budgetMax) {
         budget = budgetMax * 100; // Convert RON to bani
       }
+      
+      // Store exact budgetMin and budgetMax values in the metadata JSON field
+      const metadata = {
+        exact_budget_min: budgetMin,
+        exact_budget_max: budgetMax
+      };
       
       console.log(`Exact update budget values: min=${budgetMin}, max=${budgetMax}, stored=${budget}`);
       
@@ -858,6 +871,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         providerType: req.body.providerType || req.body.category,
         location: req.body.location,
         urgency: req.body.urgency,
+        metadata: metadata, // Store exact budget values in metadata field
       };
       
       // Handle optional fields
@@ -865,18 +879,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         updateData.deadline = req.body.specificDate || req.body.deadline;
       }
       
-      // Important: Add both the database budget field AND the exact budget values for display
+      // Important: Add the database budget field
       if (budget !== undefined) {
         updateData.budget = budget;
-      }
-      
-      // Critical: Pass the exact budget min/max values to be used in the UI
-      if (budgetMin !== undefined) {
-        updateData.budgetMin = budgetMin;
-      }
-      
-      if (budgetMax !== undefined) {
-        updateData.budgetMax = budgetMax;
       }
       
       console.log("Final update data:", updateData);
