@@ -4,6 +4,7 @@ import { useLocation } from "wouter";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
+import { cleanDescription } from "@/lib/utils";
 
 import {
   Card,
@@ -274,7 +275,7 @@ export default function MyGigsPage() {
                       </div>
                     </div>
                     
-                    <p className="text-sm mb-4">{gig.description}</p>
+                    <p className="text-sm mb-4">{cleanDescription(gig.description)}</p>
                     
                     {gig.attachments && gig.attachments.length > 0 && (
                       <div className="mb-4">
@@ -381,7 +382,7 @@ export default function MyGigsPage() {
                       </div>
                     </div>
                     
-                    <p className="text-sm mb-4">{gig.description}</p>
+                    <p className="text-sm mb-4">{cleanDescription(gig.description)}</p>
                     
                     <Separator className="my-4" />
                     
@@ -456,7 +457,7 @@ export default function MyGigsPage() {
                       </div>
                     </div>
                     
-                    <p className="text-sm mb-4">{gig.description}</p>
+                    <p className="text-sm mb-4">{cleanDescription(gig.description)}</p>
                   </CardContent>
                 </Card>
               ))}
