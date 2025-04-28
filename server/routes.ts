@@ -716,14 +716,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const jobPostings = await storage.getJobPostingsByClientId(req.user.id);
       
-      // Add frontend-specific fields for rendering in the UI
+      // Add frontend-specific fields for rendering in the UI if not already present
       const enhancedJobPostings = jobPostings.map(job => {
+        // If budgetMin and budgetMax already exist in the database, use those values
+        if (job.budgetMin !== undefined && job.budgetMax !== undefined) {
+          return job;
+        }
+        
+        // Otherwise, calculate from the budget field
         const budgetInRON = Math.round((job.budget || 0) / 100);
         return {
           ...job,
-          // Add budgetMin and budgetMax fields for the frontend
-          // For simplicity, we'll set budgetMin to 80% of budget and budgetMax to the budget
-          // In a real implementation, these would be stored separately
           budgetMin: Math.round(budgetInRON * 0.8),
           budgetMax: budgetInRON,
         };
@@ -818,13 +821,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const providerType = req.params.type;
       
-      // For now, return an empty array since the table might not exist yet
-      // This prevents errors in the UI
-      res.json([]);
+      // Get job postings for this provider type
+      const jobPostings = await storage.getJobPostingsByProviderType(providerType);
       
-      // Once the table is created properly, uncomment the following:
-      // const jobPostings = await storage.getJobPostingsByProviderType(providerType);
-      // res.json(jobPostings);
+      // Add frontend-specific fields for rendering in the UI if not already present
+      const enhancedJobPostings = jobPostings.map(job => {
+        // If budgetMin and budgetMax already exist in the database, use those values
+        if (job.budgetMin !== undefined && job.budgetMax !== undefined) {
+          return job;
+        }
+        
+        // Otherwise, calculate from the budget field
+        const budgetInRON = Math.round((job.budget || 0) / 100);
+        return {
+          ...job,
+          budgetMin: Math.round(budgetInRON * 0.8),
+          budgetMax: budgetInRON,
+        };
+      });
+      
+      res.json(enhancedJobPostings);
     } catch (error) {
       console.error("Error fetching job postings:", error);
       res.json([]); // Return empty array instead of error
@@ -852,12 +868,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid location parameters" });
       }
       
-      // For now, return an empty array to prevent errors
-      res.json([]);
+      const jobPostings = await storage.getNearbyJobPostings(lat, lng, distance);
       
-      // Uncomment when table is created:
-      // const jobPostings = await storage.getNearbyJobPostings(lat, lng, distance);
-      // res.json(jobPostings);
+      // Add frontend-specific fields for rendering in the UI if not already present
+      const enhancedJobPostings = jobPostings.map(job => {
+        // If budgetMin and budgetMax already exist as properties, use those values
+        if ('budgetMin' in job && 'budgetMax' in job) {
+          return job;
+        }
+        
+        // Otherwise, calculate from the budget field
+        const budgetInRON = Math.round((job.budget || 0) / 100);
+        return {
+          ...job,
+          budgetMin: Math.round(budgetInRON * 0.8),
+          budgetMax: budgetInRON,
+        };
+      });
+      
+      res.json(enhancedJobPostings);
     } catch (error) {
       console.error("Error fetching nearby job postings:", error);
       res.json([]); // Return empty array instead of error

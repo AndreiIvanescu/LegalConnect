@@ -108,6 +108,8 @@ export const jobPostings = pgTable("job_postings", {
   providerType: providerTypeEnum("provider_type").notNull(),
   priceType: text("price_type").notNull(), // fixed, hourly
   budget: integer("budget"), // in smallest currency unit (bani/cents)
+  budgetMin: integer("budget_min"), // as displayed to user
+  budgetMax: integer("budget_max"), // as displayed to user
   hourlyRate: integer("hourly_rate"), // in smallest currency unit (bani/cents)
   location: text("location"),
   latitude: real("latitude"),
