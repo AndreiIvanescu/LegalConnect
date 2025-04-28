@@ -18,6 +18,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { formatPrice } from "@/lib/currency";
 import { Redirect } from "wouter";
+import { cleanDescription } from "@/lib/utils";
 
 // Form schema for job posting
 const jobPostingSchema = z.object({
@@ -290,7 +291,7 @@ function JobPostingCard({ job, onUpdate }: { job: any, onUpdate: () => void }) {
         <div className="space-y-4">
           <div>
             <h4 className="text-sm font-medium mb-1">Description</h4>
-            <p className="text-sm text-gray-600">{job.description}</p>
+            <p className="text-sm text-gray-600">{cleanDescription(job.description)}</p>
           </div>
           
           <div className="grid grid-cols-2 gap-4">

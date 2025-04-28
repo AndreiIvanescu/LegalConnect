@@ -4,6 +4,7 @@ import { useLocation } from "wouter";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
+import { cleanDescription } from "@/lib/utils";
 import { 
   Loader2, 
   User, 
@@ -334,7 +335,7 @@ function ApplicationCard({
                   
                   <div>
                     <h4 className="text-sm font-medium mb-1 text-neutral-800">Job Description:</h4>
-                    <p className="text-sm text-neutral-600">{application.gig.description}</p>
+                    <p className="text-sm text-neutral-600">{cleanDescription(application.gig.description)}</p>
                   </div>
                   
                   {application.gig.attachments && application.gig.attachments.length > 0 && (
