@@ -838,9 +838,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "You don't have permission to update this job posting" });
       }
       
-      const updatedJobPosting = await storage.updateJobPosting(jobId, req.body);
-      res.json(updatedJobPosting);
+      console.log("Updating job posting with data:", req.body);
+      
+      // Extract the budget values entered by the user (similar to the POST endpoint)
+      let budgetMin = req.body.budgetMin ? parseFloat(req.body.budgetMin) : undefined;
+      let budgetMax = req.body.budgetMax ? parseFloat(req.body.budgetMax) : undefined;
+      
+      // If we have budgetMax but not budgetMin, set budgetMin to 80% of budgetMax
+      if (budgetMax && !budgetMin) {
+        budgetMin = Math.round(budgetMax * 0.8);
+      }
+      
+      // If we have budgetMin but not budgetMax, set budgetMax to budgetMin
+      if (budgetMin && !budgetMax) {
+        budgetMax = budgetMin;
+      }
+      
+      // Store the maximum budget in the database budget field (in cents/bani)
+      const budget = budgetMax ? Math.round(budgetMax * 100) : undefined;
+      
+      console.log(`Update budget values: min=${budgetMin}, max=${budgetMax}, stored=${budget}`);
+      
+      // Only include fields that exist in the database schema
+      const updateData: Partial<JobPosting> = {
+        title: req.body.title,
+        description: req.body.description,
+        providerType: req.body.providerType || req.body.category,
+        location: req.body.location,
+        urgency: req.body.urgency,
+        deadline: req.body.specificDate,
+      };
+      
+      // Only add budget if it was provided
+      if (budget !== undefined) {
+        updateData.budget = budget;
+      }
+      
+      const updatedJobPosting = await storage.updateJobPosting(jobId, updateData);
+      
+      // Add the budget values to the response for display in UI
+      const enhancedJobPosting = {
+        ...updatedJobPosting,
+        budgetMin,
+        budgetMax,
+        displayPrice: `${budgetMin} - ${budgetMax} RON`,
+        // Include URL-safe title for client-side routing
+        slugTitle: updatedJobPosting.title.toLowerCase().replace(/[^\w ]+/g, '').replace(/ +/g, '-'),
+        displayUrgency: updatedJobPosting.urgency === 'asap' ? 'ASAP' : updatedJobPosting.urgency
+      };
+      
+      res.json(enhancedJobPosting);
     } catch (error) {
+      console.error("Error updating job posting:", error);
       res.status(400).json({ message: error instanceof Error ? error.message : "Invalid data" });
     }
   });
@@ -937,15 +986,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Add frontend-specific fields for rendering in the UI
       const enhancedJobPostings = jobPostings.map(job => {
-        // Calculate from the budget field
+        // Calculate budget values from the database (stored in bani/cents)
         const budgetInRON = Math.round((job.budget || 0) / 100);
+        const budgetMin = Math.floor(budgetInRON * 0.8);
         
         return {
           ...job,
-          budgetMin: Math.round(budgetInRON * 0.8), // 80% of the budget
+          budgetMin: budgetMin,
           budgetMax: budgetInRON,
+          displayPrice: `${budgetMin} - ${budgetInRON} RON`,
           // Include URL-safe title for client-side routing
-          slugTitle: job.title.toLowerCase().replace(/[^\w ]+/g, '').replace(/ +/g, '-')
+          slugTitle: job.title.toLowerCase().replace(/[^\w ]+/g, '').replace(/ +/g, '-'),
+          displayUrgency: job.urgency === 'asap' ? 'ASAP' : job.urgency
         };
       });
       
