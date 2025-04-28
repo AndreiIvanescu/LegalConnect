@@ -7,6 +7,7 @@ import { useLocation } from "wouter";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
+import { cleanDescription } from "@/lib/utils";
 
 import {
   Form,

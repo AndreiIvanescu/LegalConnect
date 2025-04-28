@@ -4,6 +4,7 @@ import { useLocation } from "wouter";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
+import { cleanDescription } from "@/lib/utils";
 
 import {
   Card,
@@ -420,7 +421,7 @@ export default function FindContractsPage() {
                 </div>
                 
                 <p className="text-sm text-neutral-600 line-clamp-3 mb-3">
-                  {gig.description}
+                  {cleanDescription(gig.description)}
                 </p>
                 
                 {gig.attachments && gig.attachments.length > 0 && (

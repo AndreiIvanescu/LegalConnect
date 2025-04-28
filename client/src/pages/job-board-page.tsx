@@ -4,6 +4,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { Redirect } from "wouter";
 import { formatPrice } from "@/lib/currency";
+import { cleanDescription } from "@/lib/utils";
 import { 
   Calendar, 
   Clock, 
@@ -89,7 +90,7 @@ function JobCard({ job, onApply }: { job: any, onApply: () => void }) {
         <div className="space-y-4">
           <div>
             <h4 className="text-sm font-medium mb-1">Description</h4>
-            <p className="text-sm text-gray-600">{job.description}</p>
+            <p className="text-sm text-gray-600">{cleanDescription(job.description)}</p>
           </div>
           
           <div className="grid grid-cols-2 gap-4">
