@@ -144,7 +144,7 @@ export default function EditGigPage() {
   const mutation = useMutation({
     mutationFn: async (data: EditGigFormValues) => {
       try {
-        // Prepare the update data
+        // Prepare the update data with ALL fields that exist in the database
         const updateData = {
           title: data.title,
           description: data.description,
@@ -154,7 +154,7 @@ export default function EditGigPage() {
           location: data.location,
           urgency: data.urgency,
           deadline: data.specificDate,
-          // Include frontend specific data
+          // Add these for the frontend calculation
           budgetMin: parseFloat(data.budgetMin),
           budgetMax: parseFloat(data.budgetMax),
           attachments: selectedFiles,

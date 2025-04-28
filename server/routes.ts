@@ -846,9 +846,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "You don't have permission to update this job posting" });
       }
       
-      console.log("Updating job posting with data:", req.body);
+      console.log("Updating job posting ID:", jobId, "with data:", req.body);
       
-      // Extract the budget values entered by the user (similar to the POST endpoint)
+      // Extract the budget values entered by the user
       let budgetMin = req.body.budgetMin ? parseFloat(req.body.budgetMin) : undefined;
       let budgetMax = req.body.budgetMax ? parseFloat(req.body.budgetMax) : undefined;
       
@@ -863,7 +863,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Store the maximum budget in the database budget field (in cents/bani)
-      const budget = budgetMax ? Math.round(budgetMax * 100) : undefined;
+      let budget;
+      if (req.body.budget) {
+        // If budget is directly provided, use it
+        budget = Math.round(parseFloat(req.body.budget));
+      } else if (budgetMax) {
+        // Otherwise calculate from budgetMax 
+        budget = Math.round(budgetMax * 100);
+      }
       
       console.log(`Update budget values: min=${budgetMin}, max=${budgetMax}, stored=${budget}`);
       
@@ -874,26 +881,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
         providerType: req.body.providerType || req.body.category,
         location: req.body.location,
         urgency: req.body.urgency,
-        deadline: req.body.specificDate,
       };
+      
+      // Handle optional fields
+      if (req.body.specificDate || req.body.deadline) {
+        updateData.deadline = req.body.specificDate || req.body.deadline;
+      }
       
       // Only add budget if it was provided
       if (budget !== undefined) {
         updateData.budget = budget;
       }
       
+      console.log("Final update data:", updateData);
+      
       const updatedJobPosting = await storage.updateJobPosting(jobId, updateData);
       
       // Add the budget values to the response for display in UI
+      const budgetInRON = Math.round((updatedJobPosting.budget || 0) / 100);
+      const calculatedBudgetMin = Math.floor(budgetInRON * 0.8);
+      
       const enhancedJobPosting = {
         ...updatedJobPosting,
-        budgetMin,
-        budgetMax,
-        displayPrice: `${budgetMin} - ${budgetMax} RON`,
+        budgetMin: budgetMin || calculatedBudgetMin,
+        budgetMax: budgetMax || budgetInRON,
+        displayPrice: `${budgetMin || calculatedBudgetMin} - ${budgetMax || budgetInRON} RON`,
         // Include URL-safe title for client-side routing
         slugTitle: updatedJobPosting.title.toLowerCase().replace(/[^\w ]+/g, '').replace(/ +/g, '-'),
         displayUrgency: updatedJobPosting.urgency === 'asap' ? 'ASAP' : updatedJobPosting.urgency
       };
+      
+      console.log("Returning updated job posting:", enhancedJobPosting);
       
       res.json(enhancedJobPosting);
     } catch (error) {
