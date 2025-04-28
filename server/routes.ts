@@ -12,7 +12,8 @@ import {
   insertReviewSchema, 
   insertMessageSchema,
   insertJobPostingSchema,
-  insertJobApplicationSchema 
+  insertJobApplicationSchema,
+  JobPosting
 } from "@shared/schema";
 import multer from 'multer';
 import path from 'path';
@@ -860,7 +861,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`Update budget values: min=${budgetMin}, max=${budgetMax}, stored=${budget}`);
       
       // Only include fields that exist in the database schema
-      const updateData: Partial<JobPosting> = {
+      const updateData = {
         title: req.body.title,
         description: req.body.description,
         providerType: req.body.providerType || req.body.category,
