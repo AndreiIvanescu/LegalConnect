@@ -119,6 +119,7 @@ export const jobPostings = pgTable("job_postings", {
   status: jobStatusEnum("status").notNull().default('open'),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
+  metadata: text("metadata"), // JSON string for additional data like original budget values
 });
 
 // Job applications (providers applying for jobs)

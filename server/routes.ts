@@ -572,6 +572,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
     
     try {
+      console.log("Creating job posting with data:", req.body);
+      
+      // Extract and save the original budget values entered by the user
+      const budgetMin = req.body.budgetMin ? parseFloat(req.body.budgetMin) : undefined;
+      const budgetMax = req.body.budgetMax ? parseFloat(req.body.budgetMax) : undefined;
+      
       // Manually map the form fields to match the expected schema
       const data = {
         title: req.body.title,
@@ -580,19 +586,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
         priceType: req.body.priceType || 'fixed', // Default to fixed
         // Use budget directly if provided, or calculate from min/max
         budget: req.body.budget || 
-                (req.body.budgetMax ? parseInt(String(req.body.budgetMax)) * 100 : 0),
+                (req.body.budgetMax ? parseFloat(String(req.body.budgetMax)) * 100 : 0),
         location: req.body.location,
         urgency: req.body.urgency,
         deadline: req.body.specificDate,
         clientId: req.user.id,
         status: 'open',
+        // Store the original budget values in the metadata field if available
+        metadata: JSON.stringify({
+          budgetMin,
+          budgetMax,
+          attachments: req.body.attachments
+        }),
       };
       
       // Validate transformed data
       const validatedData = insertJobPostingSchema.parse(data);
       
+      // Create the job posting
       const jobPosting = await storage.createJobPosting(validatedData);
-      res.status(201).json(jobPosting);
+      
+      // Add the original budget values to the response
+      const enhancedJobPosting = {
+        ...jobPosting,
+        budgetMin,
+        budgetMax,
+      };
+      
+      res.status(201).json(enhancedJobPosting);
     } catch (error) {
       console.error("Error creating job posting:", error);
       res.status(400).json({ message: error instanceof Error ? error.message : "Invalid data" });
@@ -680,6 +701,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
 
     try {
+      console.log("Creating job posting with data:", req.body);
+      
+      // Extract and save the original budget values entered by the user
+      const budgetMin = req.body.budgetMin ? parseFloat(req.body.budgetMin) : undefined;
+      const budgetMax = req.body.budgetMax ? parseFloat(req.body.budgetMax) : undefined;
+      
       // Manually map the form fields to match the expected schema
       const data = {
         title: req.body.title,
@@ -688,19 +715,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
         priceType: req.body.priceType || 'fixed', // Default to fixed
         // Use budget directly if provided, or calculate from min/max
         budget: req.body.budget || 
-                (req.body.budgetMax ? parseInt(String(req.body.budgetMax)) * 100 : 0),
+                (req.body.budgetMax ? parseFloat(String(req.body.budgetMax)) * 100 : 0),
         location: req.body.location,
         urgency: req.body.urgency,
         deadline: req.body.specificDate,
         clientId: req.user.id,
         status: 'open',
+        // Store the original budget values in the metadata field if available
+        metadata: JSON.stringify({
+          budgetMin,
+          budgetMax,
+          attachments: req.body.attachments
+        }),
       };
       
       // Validate transformed data
       const validatedData = insertJobPostingSchema.parse(data);
       
+      // Create the job posting
       const jobPosting = await storage.createJobPosting(validatedData);
-      res.status(201).json(jobPosting);
+      
+      // Add the original budget values to the response
+      const enhancedJobPosting = {
+        ...jobPosting,
+        budgetMin,
+        budgetMax,
+      };
+      
+      res.status(201).json(enhancedJobPosting);
     } catch (error) {
       console.error("Error creating job posting:", error);
       res.status(400).json({ message: error instanceof Error ? error.message : "Invalid data" });
@@ -716,14 +758,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const jobPostings = await storage.getJobPostingsByClientId(req.user.id);
       
-      // Add frontend-specific fields for rendering in the UI if not already present
+      console.log(`Found ${jobPostings.length} job postings for client ${req.user.id}`);
+      
+      // Add frontend-specific fields for rendering in the UI
       const enhancedJobPostings = jobPostings.map(job => {
-        // If budgetMin and budgetMax already exist in the database, use those values
-        if (job.budgetMin !== undefined && job.budgetMax !== undefined) {
-          return job;
+        try {
+          // Try to parse metadata field if it exists
+          if (job.metadata) {
+            try {
+              const metadataObj = JSON.parse(job.metadata as string);
+              if (metadataObj.budgetMin !== undefined && metadataObj.budgetMax !== undefined) {
+                return {
+                  ...job,
+                  budgetMin: metadataObj.budgetMin,
+                  budgetMax: metadataObj.budgetMax,
+                };
+              }
+            } catch (e) {
+              console.error("Failed to parse metadata:", e);
+            }
+          }
+        } catch (e) {
+          console.error("Error processing job metadata:", e);
         }
         
-        // Otherwise, calculate from the budget field
+        // Calculate from the budget field as fallback
         const budgetInRON = Math.round((job.budget || 0) / 100);
         return {
           ...job,
@@ -734,6 +793,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json(enhancedJobPostings);
     } catch (error) {
+      console.error("Failed to fetch job postings:", error);
       res.status(500).json({ message: "Failed to fetch job postings" });
     }
   });
@@ -821,22 +881,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const providerType = req.params.type;
       
-      // Get job postings for this provider type
+      console.log(`Finding job postings for provider type: ${providerType}`);
+      
+      // Get job postings for this provider type - uncommenting this from the previous code
       const jobPostings = await storage.getJobPostingsByProviderType(providerType);
       
-      // Add frontend-specific fields for rendering in the UI if not already present
+      console.log(`Found ${jobPostings.length} job postings for provider type ${providerType}`);
+      
+      // Add frontend-specific fields for rendering in the UI
       const enhancedJobPostings = jobPostings.map(job => {
-        // If budgetMin and budgetMax already exist in the database, use those values
-        if (job.budgetMin !== undefined && job.budgetMax !== undefined) {
-          return job;
-        }
-        
-        // Otherwise, calculate from the budget field
+        // Calculate from the budget field
         const budgetInRON = Math.round((job.budget || 0) / 100);
+        
+        // For budgetMin and budgetMax, use the actual fields if they exist
+        const budgetMin = job.budgetMin !== undefined && job.budgetMin !== null 
+          ? job.budgetMin 
+          : Math.round(budgetInRON * 0.8);
+          
+        const budgetMax = job.budgetMax !== undefined && job.budgetMax !== null 
+          ? job.budgetMax 
+          : budgetInRON;
+          
         return {
           ...job,
-          budgetMin: Math.round(budgetInRON * 0.8),
-          budgetMax: budgetInRON,
+          budgetMin,
+          budgetMax,
         };
       });
       
