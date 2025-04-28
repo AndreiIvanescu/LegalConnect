@@ -780,13 +780,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Calculate the budgetMin and budgetMax values from the budget field
         // Budget is stored in bani/cents, so divide by 100 to get RON
         const budgetInRON = Math.round((job.budget || 0) / 100);
+        const budgetMin = Math.floor(budgetInRON * 0.8);
         
         return {
           ...job,
-          budgetMin: Math.round(budgetInRON * 0.8), // 80% of the budget
+          budgetMin: budgetMin,
           budgetMax: budgetInRON,
+          displayPrice: `${budgetMin} - ${budgetInRON} RON`,
           // Include URL-safe title for client-side routing
-          slugTitle: job.title.toLowerCase().replace(/[^\w ]+/g, '').replace(/ +/g, '-')
+          slugTitle: job.title.toLowerCase().replace(/[^\w ]+/g, '').replace(/ +/g, '-'),
+          displayUrgency: job.urgency === 'asap' ? 'ASAP' : job.urgency
         };
       });
       
@@ -809,10 +812,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Add budgetMin and budgetMax for the frontend, similar to the /api/jobs/my endpoint
       const budgetInRON = Math.round((jobPosting.budget || 0) / 100);
+      const budgetMin = Math.floor(budgetInRON * 0.8);
       const enhancedJob = {
         ...jobPosting,
-        budgetMin: Math.round(budgetInRON * 0.8),
+        budgetMin: budgetMin,
         budgetMax: budgetInRON,
+        displayPrice: `${budgetMin} - ${budgetInRON} RON`,
+        slugTitle: jobPosting.title.toLowerCase().replace(/[^\w ]+/g, '').replace(/ +/g, '-'),
+        displayUrgency: jobPosting.urgency === 'asap' ? 'ASAP' : jobPosting.urgency
       };
       
       res.json(enhancedJob);
@@ -861,7 +868,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`Update budget values: min=${budgetMin}, max=${budgetMax}, stored=${budget}`);
       
       // Only include fields that exist in the database schema
-      const updateData = {
+      const updateData: any = {
         title: req.body.title,
         description: req.body.description,
         providerType: req.body.providerType || req.body.category,
