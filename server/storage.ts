@@ -787,10 +787,27 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async updateJobPosting(id: number, data: Partial<JobPosting>): Promise<JobPosting> {
+  async updateJobPosting(id: number, data: any): Promise<JobPosting> {
+    // Check if this is a request from the patch endpoint with exact budget values
+    let exactBudgetMin = data.budgetMin;
+    let exactBudgetMax = data.budgetMax;
+    
+    // Only keep fields that exist in the database schema
+    const filteredData: Partial<JobPosting> = {};
+    for (const key in data) {
+      if (key !== 'budgetMin' && key !== 'budgetMax' && key !== 'displayPrice' && key !== 'slugTitle') {
+        // Only copy properties that exist in JobPosting type
+        if (key in jobPostings.columns) {
+          // @ts-ignore - This is safe because we're checking if the key exists
+          filteredData[key] = data[key];
+        }
+      }
+    }
+    
+    // Execute the update with our filtered data
     const [updatedJobPosting] = await db
       .update(jobPostings)
-      .set(data)
+      .set(filteredData)
       .where(eq(jobPostings.id, id))
       .returning();
     
@@ -798,7 +815,18 @@ export class DatabaseStorage implements IStorage {
       throw new Error("Job posting not found");
     }
     
-    return updatedJobPosting;
+    // Add the exact budget values to the return value for the frontend to use
+    const enhancedJobPosting = {
+      ...updatedJobPosting,
+      // Only add these fields if they were provided in the original request
+      ...(exactBudgetMin !== undefined && { budgetMin: exactBudgetMin }),
+      ...(exactBudgetMax !== undefined && { budgetMax: exactBudgetMax }),
+      ...(exactBudgetMin !== undefined && exactBudgetMax !== undefined && { 
+        displayPrice: `${exactBudgetMin} - ${exactBudgetMax} RON` 
+      }),
+    };
+    
+    return enhancedJobPosting;
   }
 
   async deleteJobPosting(id: number): Promise<void> {

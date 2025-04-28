@@ -851,7 +851,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`Exact update budget values: min=${budgetMin}, max=${budgetMax}, stored=${budget}`);
       
-      // Only include fields that exist in the database schema
+      // Include fields that exist in the database schema
       const updateData: any = {
         title: req.body.title,
         description: req.body.description,
@@ -865,9 +865,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         updateData.deadline = req.body.specificDate || req.body.deadline;
       }
       
-      // Only add budget if it was provided
+      // Important: Add both the database budget field AND the exact budget values for display
       if (budget !== undefined) {
         updateData.budget = budget;
+      }
+      
+      // Critical: Pass the exact budget min/max values to be used in the UI
+      if (budgetMin !== undefined) {
+        updateData.budgetMin = budgetMin;
+      }
+      
+      if (budgetMax !== undefined) {
+        updateData.budgetMax = budgetMax;
       }
       
       console.log("Final update data:", updateData);
