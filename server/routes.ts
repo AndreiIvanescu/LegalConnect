@@ -704,8 +704,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log("Creating job posting with data:", req.body);
       
       // Extract the original budget values entered by the user
-      const budgetMin = req.body.budgetMin ? parseFloat(req.body.budgetMin) : undefined;
-      const budgetMax = req.body.budgetMax ? parseFloat(req.body.budgetMax) : undefined;
+      // Make sure we're getting the actual values from the form
+      let budgetMin = req.body.budgetMin ? parseFloat(req.body.budgetMin) : undefined;
+      let budgetMax = req.body.budgetMax ? parseFloat(req.body.budgetMax) : undefined;
+      
+      // If we have budgetMax but not budgetMin, set budgetMin to 80% of budgetMax
+      if (budgetMax && !budgetMin) {
+        budgetMin = Math.round(budgetMax * 0.8);
+      }
+      
+      // If we have budgetMin but not budgetMax, set budgetMax to budgetMin
+      if (budgetMin && !budgetMax) {
+        budgetMax = budgetMin;
+      }
+      
+      // Store the maximum budget in the database budget field (in cents/bani)
+      const budget = budgetMax ? Math.round(budgetMax * 100) : 0;
+      
+      console.log(`Budget values: min=${budgetMin}, max=${budgetMax}, stored=${budget}`);
       
       // Manually map the form fields to match the expected schema
       // Only include fields that exist in the database
@@ -714,9 +730,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         description: req.body.description,
         providerType: req.body.providerType || req.body.category, // Accept either field
         priceType: req.body.priceType || 'fixed', // Default to fixed
-        // Use budget directly if provided, or calculate from max
-        budget: req.body.budget || 
-                (budgetMax ? Math.round(budgetMax * 100) : 0), // Convert to cents/bani
+        budget: budget, // Store the calculated budget in bani/cents
         location: req.body.location,
         urgency: req.body.urgency,
         deadline: req.body.specificDate,
@@ -735,6 +749,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ...jobPosting,
         budgetMin,
         budgetMax,
+        // Include the exact values for display
+        displayBudget: {
+          min: budgetMin,
+          max: budgetMax,
+        }
       };
       
       res.status(201).json(enhancedJobPosting);
@@ -869,15 +888,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Add frontend-specific fields for rendering in the UI
       const enhancedJobPostings = jobPostings.map(job => {
-        // Calculate from the budget field
+        // Calculate and use exact values from the database
         const budgetInRON = Math.round((job.budget || 0) / 100);
         
         return {
           ...job,
-          budgetMin: Math.round(budgetInRON * 0.8), // 80% of the budget
+          // Use exact values for consistency
+          budgetMin: Math.floor(budgetInRON * 0.8), 
           budgetMax: budgetInRON,
+          displayPrice: `${Math.floor(budgetInRON * 0.8)} - ${budgetInRON} RON`,
           // Include URL-safe title for client-side routing
-          slugTitle: job.title.toLowerCase().replace(/[^\w ]+/g, '').replace(/ +/g, '-')
+          slugTitle: job.title.toLowerCase().replace(/[^\w ]+/g, '').replace(/ +/g, '-'),
+          displayUrgency: job.urgency === 'asap' ? 'ASAP' : job.urgency
         };
       });
       
