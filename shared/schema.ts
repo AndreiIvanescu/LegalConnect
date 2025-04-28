@@ -118,8 +118,8 @@ export const jobPostings = pgTable("job_postings", {
   urgency: text("urgency"), // normal, urgent, very urgent
   deadline: timestamp("deadline"),
   status: jobStatusEnum("status").notNull().default('open'),
-  // Add a metadata field for storing custom data without changing the schema
-  metadata: json("metadata"),
+  // Metadata field commented out as it doesn't exist in the actual database
+  // metadata: json("metadata"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

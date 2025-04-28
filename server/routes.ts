@@ -593,12 +593,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         deadline: req.body.specificDate,
         clientId: req.user.id,
         status: 'open',
-        // Store the original budget values in the metadata field if available
-        metadata: JSON.stringify({
-          budgetMin,
-          budgetMax,
-          attachments: req.body.attachments
-        }),
+        // Don't use metadata field as it doesn't exist in the database
+        // Instead, budget values are stored in the description as hidden HTML comments
       };
       
       // Validate transformed data
