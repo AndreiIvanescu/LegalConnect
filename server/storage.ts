@@ -794,10 +794,18 @@ export class DatabaseStorage implements IStorage {
     
     // Only keep fields that exist in the database schema
     const filteredData: Partial<JobPosting> = {};
+    
+    // List of valid job posting fields from the schema
+    const validFields = [
+      'title', 'description', 'providerType', 'priceType', 'budget', 
+      'hourlyRate', 'location', 'latitude', 'longitude', 'urgency', 
+      'deadline', 'status', 'clientId'
+    ];
+    
     for (const key in data) {
       if (key !== 'budgetMin' && key !== 'budgetMax' && key !== 'displayPrice' && key !== 'slugTitle') {
-        // Only copy properties that exist in JobPosting type
-        if (key in jobPostings.columns) {
+        // Only copy properties that exist in valid fields
+        if (validFields.includes(key)) {
           // @ts-ignore - This is safe because we're checking if the key exists
           filteredData[key] = data[key];
         }
