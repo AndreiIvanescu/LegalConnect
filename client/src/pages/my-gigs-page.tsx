@@ -60,10 +60,11 @@ interface Gig {
 }
 
 // Helper function to format budget values
-// Don't round or format the budget value, just return it as is
+// Format the budget value to avoid floating point precision issues
 const formatBudget = (value: number | undefined | null): string => {
   if (value === undefined || value === null) return "0";
-  return value.toString();
+  // Use parseInt to get whole numbers only - no decimal places
+  return parseInt(value.toString()).toString();
 };
 
 export default function MyGigsPage() {

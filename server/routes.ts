@@ -704,14 +704,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       console.log("Creating job posting with data:", req.body);
       
-      // IMPORTANT: Use the exact budget values provided by the user
-      const budgetMin = req.body.budgetMin ? parseInt(req.body.budgetMin) : undefined;
-      const budgetMax = req.body.budgetMax ? parseInt(req.body.budgetMax) : undefined;
+      // IMPORTANT: Use the exact integer budget values provided by the user
+      const budgetMin = req.body.budgetMin ? Math.round(parseInt(req.body.budgetMin)) : undefined;
+      const budgetMax = req.body.budgetMax ? Math.round(parseInt(req.body.budgetMax)) : undefined;
       
       // Store the maximum budget in the database budget field (in cents/bani)
       const budget = budgetMax ? budgetMax * 100 : 0; // Convert RON to bani
       
-      console.log(`Exact budget values: min=${budgetMin}, max=${budgetMax}, stored=${budget}`);
+      console.log(`EXACT budget values: min=${budgetMin}, max=${budgetMax}, stored=${budget}`);
       
       // Manually map the form fields to match the expected schema
       // Only include fields that exist in the database
@@ -737,9 +737,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Add the original budget values to the response for display in UI
       const enhancedJobPosting = {
         ...jobPosting,
-        budgetMin: budgetMin,
-        budgetMax: budgetMax,
-        // Use the exact values provided by the user
+        budgetMin,
+        budgetMax,
+        // Use the exact integer values provided by the user
         displayPrice: `${budgetMin} - ${budgetMax} RON`,
         slugTitle: jobPosting.title.toLowerCase().replace(/[^\w ]+/g, '').replace(/ +/g, '-'),
         displayUrgency: jobPosting.urgency === 'asap' ? 'ASAP' : jobPosting.urgency
@@ -772,11 +772,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Create a consistent object to return to frontend
         return {
           ...job,
-          // Keep the exact same values for budget min/max
-          budgetMin: budgetInRON * 0.8,
+          // Keep the exact same values for budget min/max, use Math.round for clean integers
+          budgetMin: Math.round(budgetInRON * 0.8),
           budgetMax: budgetInRON,
-          // Display the exact price
-          displayPrice: `${budgetInRON * 0.8} - ${budgetInRON} RON`,
+          // Display the exact price as integer values
+          displayPrice: `${Math.round(budgetInRON * 0.8)} - ${budgetInRON} RON`,
           // Include URL-safe title for client-side routing
           slugTitle: job.title.toLowerCase().replace(/[^\w ]+/g, '').replace(/ +/g, '-'),
           displayUrgency: job.urgency === 'asap' ? 'ASAP' : job.urgency
@@ -806,9 +806,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Use consistent values with the other endpoints
       const enhancedJob = {
         ...jobPosting,
-        budgetMin: budgetInRON * 0.8,
+        budgetMin: Math.round(budgetInRON * 0.8),
         budgetMax: budgetInRON,
-        displayPrice: `${budgetInRON * 0.8} - ${budgetInRON} RON`,
+        displayPrice: `${Math.round(budgetInRON * 0.8)} - ${budgetInRON} RON`,
         slugTitle: jobPosting.title.toLowerCase().replace(/[^\w ]+/g, '').replace(/ +/g, '-'),
         displayUrgency: jobPosting.urgency === 'asap' ? 'ASAP' : jobPosting.urgency
       };
@@ -839,9 +839,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log("Updating job posting ID:", jobId, "with data:", req.body);
       
-      // IMPORTANT: Use the exact budget values provided by the user
-      const budgetMin = req.body.budgetMin ? parseInt(req.body.budgetMin) : undefined;
-      const budgetMax = req.body.budgetMax ? parseInt(req.body.budgetMax) : undefined;
+      // IMPORTANT: Use the exact integer budget values provided by the user
+      const budgetMin = req.body.budgetMin ? Math.round(parseInt(req.body.budgetMin)) : undefined;
+      const budgetMax = req.body.budgetMax ? Math.round(parseInt(req.body.budgetMax)) : undefined;
       
       // Calculate budget in cents/bani only if budgetMax is provided
       let budget;
@@ -942,10 +942,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         return {
           ...job,
-          // Use exact values for consistency
-          budgetMin: budgetInRON * 0.8, 
+          // Use exact integer values for consistency
+          budgetMin: Math.round(budgetInRON * 0.8), 
           budgetMax: budgetInRON,
-          displayPrice: `${budgetInRON * 0.8} - ${budgetInRON} RON`,
+          displayPrice: `${Math.round(budgetInRON * 0.8)} - ${budgetInRON} RON`,
           // Include URL-safe title for client-side routing
           slugTitle: job.title.toLowerCase().replace(/[^\w ]+/g, '').replace(/ +/g, '-'),
           displayUrgency: job.urgency === 'asap' ? 'ASAP' : job.urgency
@@ -991,10 +991,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         return {
           ...job,
-          // Use exact values for consistency
-          budgetMin: budgetInRON * 0.8,
+          // Use exact integer values for consistency
+          budgetMin: Math.round(budgetInRON * 0.8),
           budgetMax: budgetInRON,
-          displayPrice: `${budgetInRON * 0.8} - ${budgetInRON} RON`,
+          displayPrice: `${Math.round(budgetInRON * 0.8)} - ${budgetInRON} RON`,
           // Include URL-safe title for client-side routing
           slugTitle: job.title.toLowerCase().replace(/[^\w ]+/g, '').replace(/ +/g, '-'),
           displayUrgency: job.urgency === 'asap' ? 'ASAP' : job.urgency
